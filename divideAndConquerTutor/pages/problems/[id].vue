@@ -46,19 +46,21 @@
           </div>
         </div>
       </div>
-
-      <div class="mb-6">
-        <ul class="steps steps-horizontal w-full">
-          <li 
-            v-for="(step, index) in steps" 
-            :key="index"
-            class="step" 
-            :class="{ 'step-primary': currentStepIndex >= index }"
-          >
-            {{ step.title }}
-          </li>
-        </ul>
+      
+      <!-- Adaptive Feedback based on BKT model -->
+      <div v-if="!showHints">
+        <AdaptiveFeedback 
+          :problem-id="problem.id"
+          :step-id="currentStep?.id"
+          :step-type="getStepType(currentStepIndex)"
+          :difficulty="problem.difficulty"
+          :hints="problem.hints"
+          :show-hint="showHints"
+          @hint-provided="handleAdaptiveHint"
+        />
       </div>
+
+      <StepsProgress :steps="steps" :current-step="currentStepIndex" />
 
       <div class="card bg-base-100 shadow-xl mb-8">
         <div class="card-body">
@@ -73,34 +75,22 @@
             />
           </div>
 
-          <div v-if="feedbackMessage" class="alert mb-4" :class="{
-            'alert-success': lastSubmissionCorrect,
-            'alert-error': !lastSubmissionCorrect
-          }">
-            <div>
-              <span v-if="lastSubmissionCorrect">✓</span>
-              <span v-else>✗</span>
-              {{ feedbackMessage }}
-            </div>
-          </div>
+          <FeedbackMessage 
+            :message="feedbackMessage" 
+            :is-correct="lastSubmissionCorrect"
+            :is-hint="isHintMessage"
+            :detailed-feedback="detailedFeedback"
+            :show-hint-button="!showHints"
+            @request-hint="requestHint"
+          />
 
-          <div class="flex justify-between">
-            <button 
-              @click="previousStep" 
-              class="btn" 
-              :disabled="currentStepIndex === 0"
-            >
-              Previous
-            </button>
-            
-            <button 
-              @click="nextStep" 
-              class="btn btn-primary" 
-              :disabled="!canProgressToNextStep"
-            >
-              {{ currentStepIndex === steps.length - 1 ? 'Finish' : 'Next' }}
-            </button>
-          </div>
+          <StepNavigation 
+            :is-first-step="currentStepIndex === 0"
+            :is-last-step="currentStepIndex === steps.length - 1"
+            :can-progress="canProgressToNextStep"
+            @previous="previousStep"
+            @next="nextStep"
+          />
         </div>
       </div>
     </div>
@@ -108,98 +98,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
-// This would typically be imported from component files
-const MultipleChoiceQuestion = {
-  props: ['data'],
-  emits: ['submit'],
-  setup(props, { emit }) {
-    const selectedOption = ref(null);
-    
-    const submitAnswer = () => {
-      emit('submit', {
-        answer: selectedOption.value,
-        correct: selectedOption.value === props.data.correctAnswer
-      });
-    };
-    
-    return {
-      selectedOption,
-      submitAnswer
-    };
-  },
-  template: `
-    <div>
-      <div class="mb-4">
-        <div class="font-medium mb-2">{{ data.question }}</div>
-        <div v-for="(option, index) in data.options" :key="index" class="form-control">
-          <label class="label cursor-pointer justify-start gap-4">
-            <input 
-              type="radio" 
-              name="question" 
-              class="radio" 
-              :value="option"
-              v-model="selectedOption"
-            />
-            <span class="label-text">{{ option }}</span>
-          </label>
-        </div>
-      </div>
-      <button @click="submitAnswer" class="btn btn-sm btn-primary" :disabled="!selectedOption">
-        Submit Answer
-      </button>
-    </div>
-  `
-};
-
-const FreeTextQuestion = {
-  props: ['data'],
-  emits: ['submit'],
-  setup(props, { emit }) {
-    const answer = ref('');
-    
-    const submitAnswer = () => {
-      // Simplified validation for demo purposes
-      const isCorrect = props.data.validateFunc(answer.value);
-      emit('submit', {
-        answer: answer.value,
-        correct: isCorrect
-      });
-    };
-    
-    return {
-      answer,
-      submitAnswer
-    };
-  },
-  template: `
-    <div>
-      <div class="mb-4">
-        <div class="font-medium mb-2">{{ data.question }}</div>
-        <textarea 
-          v-model="answer" 
-          class="textarea textarea-bordered w-full h-32"
-          placeholder="Enter your answer here..."
-        ></textarea>
-      </div>
-      <button @click="submitAnswer" class="btn btn-sm btn-primary" :disabled="!answer.trim()">
-        Submit Answer
-      </button>
-    </div>
-  `
-};
+import { useProblemStore } from '~/stores/problemStore';
+import { useUserStore } from '~/stores/userStore';
+import MultipleChoiceQuestion from '~/components/MultipleChoiceQuestion.vue';
+import FreeTextQuestion from '~/components/FreeTextQuestion.vue';
+import FillInBlankQuestion from '~/components/FillInBlankQuestion.vue';
+import DragDropQuestion from '~/components/DragDropQuestion.vue';
+import StepsProgress from '~/components/StepsProgress.vue';
+import StepNavigation from '~/components/StepNavigation.vue';
+import FeedbackMessage from '~/components/FeedbackMessage.vue';
+import AdaptiveFeedback from '~/components/AdaptiveFeedback.vue';
 
 // Register the step component types
 const stepComponents = {
   'multiple-choice': MultipleChoiceQuestion,
   'free-text': FreeTextQuestion,
-  // Other component types would be registered here
+  'fill-in-blank': FillInBlankQuestion,
+  'drag-drop': DragDropQuestion
 };
 
 const route = useRoute();
 const router = useRouter();
+const problemStore = useProblemStore();
+const userStore = useUserStore();
 
 const loading = ref(true);
 const problem = ref(null);
@@ -208,99 +131,25 @@ const stepsCompleted = ref({});
 const showHints = ref(false);
 const feedbackMessage = ref('');
 const lastSubmissionCorrect = ref(false);
+const isHintMessage = ref(false);
+const detailedFeedback = ref([]);
+const currentHintIndex = ref(0);
 
-// Mock problem data - in a real application, this would come from an API
-const problemData = {
-  'merge-sort': {
-    id: 'merge-sort',
-    title: 'Merge Sort',
-    difficulty: 'Beginner',
-    category: 'Sorting',
-    estimatedTime: '20 mins',
-    description: 'The Merge Sort algorithm is a classic divide-and-conquer algorithm for sorting arrays. It works by recursively dividing the array in half, sorting each half, and then merging the sorted halves back together. Your task is to understand the divide-and-conquer aspects of the Merge Sort algorithm before implementing it.',
-    learningObjectives: [
-      'Understand how to decompose a sorting problem into smaller subproblems',
-      'Identify appropriate base cases for the recursion',
-      'Formulate the recurrence relation that describes the algorithm\'s time complexity',
-      'Develop correct pseudocode for the Merge Sort algorithm'
-    ],
-    hints: [
-      'Think about what is the smallest array size that you can sort without recursion',
-      'Consider how to merge two already sorted arrays efficiently',
-      'The recurrence relation should express the time as a function of the input size'
-    ]
-  }
-};
+// Computed properties to work with the problem data
+const steps = computed(() => {
+  if (!problem.value) return [];
+  return problem.value.steps.map(step => ({
+    title: step.title,
+    instructions: step.instructions,
+    type: step.type,
+    data: step.data
+  }));
+});
 
-// Mock steps data
-const steps = [
-  {
-    title: 'Problem Decomposition',
-    instructions: 'In the first step, you need to identify how the Merge Sort algorithm breaks down the original problem into smaller subproblems.',
-    type: 'multiple-choice',
-    data: {
-      question: 'How does the Merge Sort algorithm decompose the original sorting problem?',
-      options: [
-        'It selects a pivot element and partitions the array around it',
-        'It divides the array in half regardless of the values',
-        'It creates buckets based on value ranges',
-        'It identifies already sorted subarrays'
-      ],
-      correctAnswer: 'It divides the array in half regardless of the values'
-    }
-  },
-  {
-    title: 'Base Case Identification',
-    instructions: 'Now, identify the base case for the Merge Sort recursion. The base case is the simplest instance of the problem that can be solved directly without further recursion.',
-    type: 'multiple-choice',
-    data: {
-      question: 'What is the base case for the Merge Sort algorithm?',
-      options: [
-        'An array of size 0',
-        'An array of size 1',
-        'An array of size 2',
-        'A sorted array of any size'
-      ],
-      correctAnswer: 'An array of size 1'
-    }
-  },
-  {
-    title: 'Recurrence Relation',
-    instructions: 'In this step, identify the recurrence relation that describes the time complexity of the Merge Sort algorithm.',
-    type: 'multiple-choice',
-    data: {
-      question: 'Which recurrence relation correctly describes the time complexity of Merge Sort?',
-      options: [
-        'T(n) = 2T(n/2) + O(n)',
-        'T(n) = T(n/2) + O(1)',
-        'T(n) = 2T(n/2) + O(log n)',
-        'T(n) = T(n-1) + O(n)'
-      ],
-      correctAnswer: 'T(n) = 2T(n/2) + O(n)'
-    }
-  },
-  {
-    title: 'Pseudocode Translation',
-    instructions: 'Now, write pseudocode for the Merge Sort algorithm. Make sure to include both the recursive Merge Sort function and the merge function that combines two sorted arrays.',
-    type: 'free-text',
-    data: {
-      question: 'Write pseudocode for the Merge Sort algorithm, including the merge function:',
-      validateFunc: (answer) => {
-        // This is a simplified validator for demo purposes
-        // In a real application, this would be more sophisticated
-        const lowerAnswer = answer.toLowerCase();
-        return lowerAnswer.includes('mergesort') && 
-               lowerAnswer.includes('merge') && 
-               lowerAnswer.includes('if') && 
-               (lowerAnswer.includes('length') || lowerAnswer.includes('size')) &&
-               lowerAnswer.includes('return');
-      }
-    }
-  }
-];
-
-// Computed properties
-const currentStep = computed(() => steps[currentStepIndex.value]);
+const currentStep = computed(() => {
+  if (!steps.value || steps.value.length === 0) return null;
+  return steps.value[currentStepIndex.value];
+});
 
 const canProgressToNextStep = computed(() => {
   return stepsCompleted.value[currentStepIndex.value] === true;
@@ -309,42 +158,189 @@ const canProgressToNextStep = computed(() => {
 // Methods
 const toggleHints = () => {
   showHints.value = !showHints.value;
+  
+  // Reset the hint-specific state if hiding hints
+  if (!showHints.value) {
+    isHintMessage.value = false;
+    if (feedbackMessage.value.startsWith('Hint:')) {
+      feedbackMessage.value = '';
+    }
+  }
+};
+
+const requestHint = () => {
+  // Show the available hint for the current step
+  if (problem.value?.hints && problem.value.hints.length > 0) {
+    const hintIndex = Math.min(currentHintIndex.value, problem.value.hints.length - 1);
+    feedbackMessage.value = `Hint: ${problem.value.hints[hintIndex]}`;
+    isHintMessage.value = true;
+    currentHintIndex.value = Math.min(currentHintIndex.value + 1, problem.value.hints.length - 1);
+  } else {
+    feedbackMessage.value = 'No hints available for this problem.';
+    isHintMessage.value = true;
+  }
 };
 
 const handleStepSubmission = (result) => {
+  isHintMessage.value = false;
+  detailedFeedback.value = [];
+  
+  const problemId = problem.value.id;
+  const stepId = problem.value.steps[currentStepIndex.value].id;
+  
   if (result.correct) {
     stepsCompleted.value[currentStepIndex.value] = true;
     feedbackMessage.value = 'Correct! You can proceed to the next step.';
     lastSubmissionCorrect.value = true;
+    
+    // Reset hint index when getting correct answer
+    currentHintIndex.value = 0;
+    
+    // Update user progress in store
+    userStore.updateProblemProgress(problemId, stepId, true, problem.value.difficulty);
   } else {
     feedbackMessage.value = 'That\'s not quite right. Please try again.';
     lastSubmissionCorrect.value = false;
+    
+    // Add detailed feedback for partial results if available
+    if (result.partialResults) {
+      detailedFeedback.value = generateDetailedFeedback(result);
+    }
+    
+    // Update user progress in store (track the attempt)
+    userStore.updateProblemProgress(problemId, stepId, false, problem.value.difficulty);
   }
+};
+
+const generateDetailedFeedback = (result) => {
+  const feedback = [];
+  
+  // Handle multiple choice question with multiple correct answers
+  if (currentStep.value.type === 'multiple-choice' && Array.isArray(currentStep.value.data.correctAnswer)) {
+    feedback.push('Select all correct options to proceed.');
+  }
+  
+  // Handle fill-in-blank questions
+  if (currentStep.value.type === 'fill-in-blank' && result.partialResults) {
+    result.partialResults.forEach((correct, index) => {
+      if (!correct) {
+        feedback.push(`Answer ${index + 1} is incorrect.`);
+      }
+    });
+  }
+  
+  // Handle drag-drop questions
+  if (currentStep.value.type === 'drag-drop') {
+    feedback.push('The order is not correct. Try a different arrangement.');
+  }
+  
+  return feedback;
 };
 
 const previousStep = () => {
   if (currentStepIndex.value > 0) {
     currentStepIndex.value--;
-    feedbackMessage.value = '';
+    resetFeedback();
+    currentHintIndex.value = 0; // Reset hint index when changing steps
   }
 };
 
 const nextStep = () => {
   if (currentStepIndex.value < steps.length - 1) {
     currentStepIndex.value++;
-    feedbackMessage.value = '';
+    resetFeedback();
+    currentHintIndex.value = 0; // Reset hint index when changing steps
   } else {
     // Last step completed, handle completion
-    // In a real app, this would save progress to the backend
-    router.push('/problems');
+    completeExercise();
   }
+};
+
+const resetFeedback = () => {
+  feedbackMessage.value = '';
+  isHintMessage.value = false;
+  detailedFeedback.value = [];
+  lastSubmissionCorrect.value = false;
+};
+
+const completeExercise = () => {
+  // Show completion message
+  feedbackMessage.value = 'Congratulations! You have completed this exercise.';
+  lastSubmissionCorrect.value = true;
+  
+  // In a real app, this would save progress to the backend
+  // For now, we'll simulate a delay before redirecting
+  setTimeout(() => {
+    router.push('/problems');
+  }, 2000);
+};
+
+// Helper method to convert step index to step type for BKT
+const getStepType = (stepIndex) => {
+  if (!problem.value || !problem.value.steps || stepIndex >= problem.value.steps.length) {
+    return 'decomposition'; // Default
+  }
+  
+  // Map step ID to skill type
+  const stepId = problem.value.steps[stepIndex].id;
+  
+  // Common step ID to skill type mapping
+  const stepTypeMap = {
+    'decomposition': 'decomposition',
+    'base-case': 'base-case',
+    'recurrence': 'recurrence',
+    'pseudocode': 'pseudocode',
+    'algorithm-steps': 'pseudocode'
+  };
+  
+  return stepTypeMap[stepId] || 'decomposition';
+};
+
+// Handle adaptive hints
+const handleAdaptiveHint = (hint) => {
+  feedbackMessage.value = hint;
+  isHintMessage.value = true;
 };
 
 // Lifecycle hooks
 onMounted(() => {
   const id = route.params.id;
-  // In a real app, this would be an API call
-  problem.value = problemData[id];
+  
+  // Set current problem ID in store
+  problemStore.setCurrentProblem(id);
+  
+  // Get problem data from store
+  problem.value = problemStore.problemById(id);
+  
+  if (!problem.value) {
+    // Handle problem not found
+    router.push('/problems');
+    return;
+  }
+  
+  // Initialize steps completed state if user has progress
+  if (userStore.progress.problemStats[id]) {
+    const stepData = userStore.progress.problemStats[id].stepData;
+    
+    problem.value.steps.forEach((step, index) => {
+      if (stepData[step.id] && stepData[step.id].correct) {
+        stepsCompleted.value[index] = true;
+      }
+    });
+    
+    // If user was in the middle of this problem, try to resume at that step
+    if (userStore.progress.inProgressProblems.includes(id)) {
+      // Find the first incomplete step
+      const firstIncompleteIndex = problem.value.steps.findIndex((step, index) => 
+        !stepsCompleted.value[index]
+      );
+      
+      if (firstIncompleteIndex !== -1) {
+        currentStepIndex.value = firstIncompleteIndex;
+      }
+    }
+  }
+  
   loading.value = false;
 });
 </script>

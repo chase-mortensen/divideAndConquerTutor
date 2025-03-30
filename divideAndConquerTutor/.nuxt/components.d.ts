@@ -12,9 +12,17 @@ type HydrationStrategies = {
 }
 type LazyComponent<T> = (T & DefineComponent<HydrationStrategies, {}, {}, {}, {}, {}, {}, { hydrated: () => void }>)
 interface _GlobalComponents {
-      'FreeTextQuestion': typeof import("../components/FreeTextQuestion.vue")['default']
+      'AdaptiveFeedback': typeof import("../components/AdaptiveFeedback.vue")['default']
+    'DragDropQuestion': typeof import("../components/DragDropQuestion.vue")['default']
+    'FeedbackMessage': typeof import("../components/FeedbackMessage.vue")['default']
+    'FillInBlankQuestion': typeof import("../components/FillInBlankQuestion.vue")['default']
+    'FreeTextQuestion': typeof import("../components/FreeTextQuestion.vue")['default']
+    'KnowledgeModelDetails': typeof import("../components/KnowledgeModelDetails.vue")['default']
     'MultipleChoiceQuestion': typeof import("../components/MultipleChoiceQuestion.vue")['default']
     'ProblemCard': typeof import("../components/ProblemCard.vue")['default']
+    'ProblemHeader': typeof import("../components/ProblemHeader.vue")['default']
+    'StepNavigation': typeof import("../components/StepNavigation.vue")['default']
+    'StepsProgress': typeof import("../components/StepsProgress.vue")['default']
     'NuxtWelcome': typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
     'NuxtLayout': typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
     'NuxtErrorBoundary': typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
@@ -38,9 +46,17 @@ interface _GlobalComponents {
     'Body': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
     'NuxtIsland': typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
     'NuxtRouteAnnouncer': IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
-      'LazyFreeTextQuestion': LazyComponent<typeof import("../components/FreeTextQuestion.vue")['default']>
+      'LazyAdaptiveFeedback': LazyComponent<typeof import("../components/AdaptiveFeedback.vue")['default']>
+    'LazyDragDropQuestion': LazyComponent<typeof import("../components/DragDropQuestion.vue")['default']>
+    'LazyFeedbackMessage': LazyComponent<typeof import("../components/FeedbackMessage.vue")['default']>
+    'LazyFillInBlankQuestion': LazyComponent<typeof import("../components/FillInBlankQuestion.vue")['default']>
+    'LazyFreeTextQuestion': LazyComponent<typeof import("../components/FreeTextQuestion.vue")['default']>
+    'LazyKnowledgeModelDetails': LazyComponent<typeof import("../components/KnowledgeModelDetails.vue")['default']>
     'LazyMultipleChoiceQuestion': LazyComponent<typeof import("../components/MultipleChoiceQuestion.vue")['default']>
     'LazyProblemCard': LazyComponent<typeof import("../components/ProblemCard.vue")['default']>
+    'LazyProblemHeader': LazyComponent<typeof import("../components/ProblemHeader.vue")['default']>
+    'LazyStepNavigation': LazyComponent<typeof import("../components/StepNavigation.vue")['default']>
+    'LazyStepsProgress': LazyComponent<typeof import("../components/StepsProgress.vue")['default']>
     'LazyNuxtWelcome': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
     'LazyNuxtLayout': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
     'LazyNuxtErrorBoundary': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']>
@@ -70,9 +86,17 @@ declare module 'vue' {
   export interface GlobalComponents extends _GlobalComponents { }
 }
 
+export const AdaptiveFeedback: typeof import("../components/AdaptiveFeedback.vue")['default']
+export const DragDropQuestion: typeof import("../components/DragDropQuestion.vue")['default']
+export const FeedbackMessage: typeof import("../components/FeedbackMessage.vue")['default']
+export const FillInBlankQuestion: typeof import("../components/FillInBlankQuestion.vue")['default']
 export const FreeTextQuestion: typeof import("../components/FreeTextQuestion.vue")['default']
+export const KnowledgeModelDetails: typeof import("../components/KnowledgeModelDetails.vue")['default']
 export const MultipleChoiceQuestion: typeof import("../components/MultipleChoiceQuestion.vue")['default']
 export const ProblemCard: typeof import("../components/ProblemCard.vue")['default']
+export const ProblemHeader: typeof import("../components/ProblemHeader.vue")['default']
+export const StepNavigation: typeof import("../components/StepNavigation.vue")['default']
+export const StepsProgress: typeof import("../components/StepsProgress.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const NuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
@@ -96,9 +120,17 @@ export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
 export const NuxtRouteAnnouncer: IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
+export const LazyAdaptiveFeedback: LazyComponent<typeof import("../components/AdaptiveFeedback.vue")['default']>
+export const LazyDragDropQuestion: LazyComponent<typeof import("../components/DragDropQuestion.vue")['default']>
+export const LazyFeedbackMessage: LazyComponent<typeof import("../components/FeedbackMessage.vue")['default']>
+export const LazyFillInBlankQuestion: LazyComponent<typeof import("../components/FillInBlankQuestion.vue")['default']>
 export const LazyFreeTextQuestion: LazyComponent<typeof import("../components/FreeTextQuestion.vue")['default']>
+export const LazyKnowledgeModelDetails: LazyComponent<typeof import("../components/KnowledgeModelDetails.vue")['default']>
 export const LazyMultipleChoiceQuestion: LazyComponent<typeof import("../components/MultipleChoiceQuestion.vue")['default']>
 export const LazyProblemCard: LazyComponent<typeof import("../components/ProblemCard.vue")['default']>
+export const LazyProblemHeader: LazyComponent<typeof import("../components/ProblemHeader.vue")['default']>
+export const LazyStepNavigation: LazyComponent<typeof import("../components/StepNavigation.vue")['default']>
+export const LazyStepsProgress: LazyComponent<typeof import("../components/StepsProgress.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
 export const LazyNuxtLayout: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
 export const LazyNuxtErrorBoundary: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']>

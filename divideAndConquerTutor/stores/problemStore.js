@@ -212,7 +212,78 @@ export const useProblemStore = defineStore('problems', {
               correctAnswer: 'Both A and B, then take the maximum of the three cases'
             }
           },
-          // Other steps would follow the same pattern as the previous problems
+          {
+            id: 'base-case',
+            title: 'Base Case Identification',
+            instructions: 'Now, identify the base case for the Maximum Subarray problem.',
+            type: 'fill-in-blank',
+            data: {
+              question: 'Complete the base case for the Maximum Subarray algorithm:',
+              questionText: 'If the array has [blank] element(s), the maximum subarray is the [blank] itself with sum equal to the [blank] of that element.',
+              blanks: [
+                ['1', 'one', 'a single'],
+                ['element', 'array', 'subarray'],
+                ['value', 'number']
+              ]
+            }
+          },
+          {
+            id: 'recurrence',
+            title: 'Recurrence Relation',
+            instructions: 'In this step, identify the recurrence relation that describes the time complexity of the Maximum Subarray algorithm.',
+            type: 'multiple-choice',
+            data: {
+              question: 'Which recurrence relation correctly describes the time complexity of the Maximum Subarray algorithm?',
+              options: [
+                'T(n) = 2T(n/2) + O(n)',
+                'T(n) = T(n/2) + O(1)',
+                'T(n) = 2T(n/2) + O(log n)',
+                'T(n) = T(n-1) + O(n)'
+              ],
+              correctAnswer: 'T(n) = 2T(n/2) + O(n)'
+            }
+          },
+          {
+            id: 'algorithm-steps',
+            title: 'Algorithm Steps',
+            instructions: 'Put the steps of the Maximum Subarray algorithm in the correct order.',
+            type: 'drag-drop',
+            data: {
+              question: 'Arrange the following steps of the Maximum Subarray algorithm in the correct order:',
+              items: [
+                'Divide the array into two halves',
+                'Find the maximum subarray that crosses the midpoint',
+                'Find the maximum subarray in the left half',
+                'Find the maximum subarray in the right half',
+                'Return the maximum of the three cases'
+              ],
+              correctOrder: [
+                'Divide the array into two halves',
+                'Find the maximum subarray in the left half',
+                'Find the maximum subarray in the right half',
+                'Find the maximum subarray that crosses the midpoint',
+                'Return the maximum of the three cases'
+              ]
+            }
+          },
+          {
+            id: 'pseudocode',
+            title: 'Pseudocode Translation',
+            instructions: 'Now, write pseudocode for the Maximum Subarray algorithm.',
+            type: 'free-text',
+            data: {
+              question: 'Write pseudocode for the Maximum Subarray algorithm, including the function to find the maximum subarray that crosses the midpoint:',
+              validateFunc: (answer) => {
+                const lowerAnswer = answer.toLowerCase();
+                return lowerAnswer.includes('max') && 
+                       lowerAnswer.includes('mid') && 
+                       lowerAnswer.includes('left') && 
+                       lowerAnswer.includes('right') && 
+                       lowerAnswer.includes('cross') && 
+                       lowerAnswer.includes('return');
+              }
+            }
+          }
         ]
       },
       // Additional problems would be defined here

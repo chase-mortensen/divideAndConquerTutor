@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import BKTModel from './bktModel';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -12,33 +13,36 @@ export const useUserStore = defineStore('user', {
           attempts: 2,
           accuracy: 90,
           lastAttempt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          difficulty: 'Beginner',
           stepData: {
-            'decomposition': { correct: true, attempts: 1 },
-            'base-case': { correct: true, attempts: 1 },
-            'recurrence': { correct: true, attempts: 2 },
-            'pseudocode': { correct: true, attempts: 1 }
+            'decomposition': { correct: true, attempts: 1, correctCount: 1, incorrectCount: 0 },
+            'base-case': { correct: true, attempts: 1, correctCount: 1, incorrectCount: 0 },
+            'recurrence': { correct: true, attempts: 2, correctCount: 1, incorrectCount: 1 },
+            'pseudocode': { correct: true, attempts: 1, correctCount: 1, incorrectCount: 0 }
           }
         },
         'maximum-subarray': {
           attempts: 1,
           accuracy: 75,
           lastAttempt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          difficulty: 'Intermediate',
           stepData: {
-            'decomposition': { correct: true, attempts: 1 },
-            'base-case': { correct: true, attempts: 2 },
-            'recurrence': { correct: false, attempts: 1 },
-            'pseudocode': { correct: false, attempts: 0 }
+            'decomposition': { correct: true, attempts: 1, correctCount: 1, incorrectCount: 0 },
+            'base-case': { correct: true, attempts: 2, correctCount: 1, incorrectCount: 1 },
+            'recurrence': { correct: false, attempts: 1, correctCount: 0, incorrectCount: 1 },
+            'pseudocode': { correct: false, attempts: 0, correctCount: 0, incorrectCount: 0 }
           }
         },
         'matrix-multiplication': {
           attempts: 3,
           accuracy: 85,
           lastAttempt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          difficulty: 'Advanced',
           stepData: {
-            'decomposition': { correct: true, attempts: 1 },
-            'base-case': { correct: true, attempts: 2 },
-            'recurrence': { correct: true, attempts: 3 },
-            'pseudocode': { correct: true, attempts: 2 }
+            'decomposition': { correct: true, attempts: 1, correctCount: 1, incorrectCount: 0 },
+            'base-case': { correct: true, attempts: 2, correctCount: 1, incorrectCount: 1 },
+            'recurrence': { correct: true, attempts: 3, correctCount: 1, incorrectCount: 2 },
+            'pseudocode': { correct: true, attempts: 2, correctCount: 1, incorrectCount: 1 }
           }
         }
       },
@@ -47,6 +51,13 @@ export const useUserStore = defineStore('user', {
         'base-case': 70,
         'recurrence': 60,
         'pseudocode': 75
+      },
+      // BKT knowledge estimates for each skill
+      knowledgeEstimates: {
+        'decomposition': 0.85,
+        'base-case': 0.70,
+        'recurrence': 0.60,
+        'pseudocode': 0.75
       }
     }
   }),
@@ -74,6 +85,47 @@ export const useUserStore = defineStore('user', {
       return allProblems
         .filter(p => !completed.has(p) && !inProgress.has(p))
         .slice(0, 2); // Return top 2 recommendations
+    },
+    
+    // Get the next step prediction for a specific problem and skill
+    predictNextAttempt: (state) => (problemId, stepId) => {
+      // If no stats exist yet, return a default prediction
+      if (!state.progress.problemStats[problemId]) {
+        return {
+          probabilityCorrect: 0.5, // 50% chance by default
+          confidence: 'medium'
+        };
+      }
+      
+      const problemStats = state.progress.problemStats[problemId];
+      const difficulty = problemStats.difficulty || 'Intermediate';
+      
+      // Get appropriate BKT model for this skill type
+      const bktParams = BKTModel.getParametersForSkill(stepId, difficulty.toLowerCase());
+      const bktModel = new BKTModel(bktParams);
+      
+      // Get the current knowledge estimate for this skill
+      const knowledgeEstimate = state.progress.knowledgeEstimates[stepId] || bktModel.p_L0;
+      
+      // Predict performance using the model
+      const probabilityCorrect = bktModel.predictPerformance(knowledgeEstimate);
+      
+      // Determine confidence level based on amount of data
+      let confidence = 'low';
+      if (problemStats.stepData[stepId]) {
+        const attempts = problemStats.stepData[stepId].attempts || 0;
+        if (attempts > 5) {
+          confidence = 'high';
+        } else if (attempts > 2) {
+          confidence = 'medium';
+        }
+      }
+      
+      return {
+        probabilityCorrect: Math.round(probabilityCorrect * 100) / 100,
+        knowledgeEstimate: Math.round(knowledgeEstimate * 100) / 100,
+        confidence
+      };
     }
   },
   
@@ -102,13 +154,14 @@ export const useUserStore = defineStore('user', {
       this.isAuthenticated = false;
     },
     
-    updateProblemProgress(problemId, stepId, result) {
+    updateProblemProgress(problemId, stepId, result, problemDifficulty = 'Intermediate') {
       // Ensure problem stats exist
       if (!this.progress.problemStats[problemId]) {
         this.progress.problemStats[problemId] = {
           attempts: 0,
           accuracy: 0,
           lastAttempt: new Date().toISOString(),
+          difficulty: problemDifficulty,
           stepData: {}
         };
       }
@@ -117,7 +170,9 @@ export const useUserStore = defineStore('user', {
       if (!this.progress.problemStats[problemId].stepData[stepId]) {
         this.progress.problemStats[problemId].stepData[stepId] = {
           correct: false,
-          attempts: 0
+          attempts: 0,
+          correctCount: 0,
+          incorrectCount: 0
         };
       }
       
@@ -125,8 +180,12 @@ export const useUserStore = defineStore('user', {
       const stepData = this.progress.problemStats[problemId].stepData[stepId];
       stepData.attempts++;
       
+      // Track this attempt as correct or incorrect (for BKT)
       if (result) {
         stepData.correct = true;
+        stepData.correctCount = (stepData.correctCount || 0) + 1;
+      } else {
+        stepData.incorrectCount = (stepData.incorrectCount || 0) + 1;
       }
       
       // Update problem stats
@@ -150,42 +209,68 @@ export const useUserStore = defineStore('user', {
         this.progress.inProgressProblems.push(problemId);
       }
       
-      // Update skill mastery
+      // Update skill mastery using Bayesian Knowledge Tracing
       this._updateSkillMastery();
     },
     
     _updateSkillMastery() {
-      // In a real app, this would implement Bayesian Knowledge Tracing
-      // For this prototype, we use a simple averaging approach
+      // Implement Bayesian Knowledge Tracing for more accurate skill mastery estimates
       
-      // Map stepIds to skill categories
-      const skillMap = {
-        'decomposition': ['decomposition'],
-        'base-case': ['base-case'],
-        'recurrence': ['recurrence'],
-        'pseudocode': ['pseudocode']
-      };
+      // Define the skill categories
+      const skills = ['decomposition', 'base-case', 'recurrence', 'pseudocode'];
       
-      // For each skill category, calculate mastery based on steps completed
-      for (const [skill, steps] of Object.entries(skillMap)) {
-        let totalCorrect = 0;
-        let totalAttempts = 0;
+      // For each skill, update mastery using BKT
+      for (const skill of skills) {
+        // Aggregate performance data across all problems
+        const performanceHistory = {
+          correct: 0,
+          incorrect: 0
+        };
+        
+        // Collect difficulty levels to get weighted parameters
+        const difficultyCounter = {
+          'Beginner': 0,
+          'Intermediate': 0,
+          'Advanced': 0
+        };
         
         // Aggregate data from all problems
-        for (const problemStats of Object.values(this.progress.problemStats)) {
-          for (const stepId of steps) {
-            if (problemStats.stepData[stepId]) {
-              const stepData = problemStats.stepData[stepId];
-              if (stepData.correct) totalCorrect++;
-              if (stepData.attempts > 0) totalAttempts++;
-            }
+        for (const [problemId, problemStats] of Object.entries(this.progress.problemStats)) {
+          // Count difficulties for weighting
+          if (problemStats.difficulty) {
+            difficultyCounter[problemStats.difficulty]++;
+          }
+          
+          // Collect performance data for this skill
+          if (problemStats.stepData[skill]) {
+            const stepData = problemStats.stepData[skill];
+            performanceHistory.correct += stepData.correctCount || 0;
+            performanceHistory.incorrect += stepData.incorrectCount || 0;
           }
         }
         
-        // Calculate mastery percentage
-        if (totalAttempts > 0) {
-          this.progress.skillMastery[skill] = Math.round((totalCorrect / totalAttempts) * 100);
+        // Determine predominant difficulty level for parameter selection
+        let predominantDifficulty = 'Intermediate'; // Default
+        let maxCount = 0;
+        for (const [difficulty, count] of Object.entries(difficultyCounter)) {
+          if (count > maxCount) {
+            maxCount = count;
+            predominantDifficulty = difficulty;
+          }
         }
+        
+        // Get BKT parameters appropriate for this skill and difficulty
+        const bktParams = BKTModel.getParametersForSkill(skill, predominantDifficulty.toLowerCase());
+        const bktModel = new BKTModel(bktParams);
+        
+        // Calculate knowledge estimate using BKT model
+        const knowledgeEstimate = bktModel.calculateMastery(performanceHistory) / 100;
+        
+        // Save the raw knowledge estimate
+        this.progress.knowledgeEstimates[skill] = knowledgeEstimate;
+        
+        // Update the mastery percentage (visible to user)
+        this.progress.skillMastery[skill] = Math.round(knowledgeEstimate * 100);
       }
     }
   }

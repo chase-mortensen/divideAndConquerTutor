@@ -2,18 +2,9 @@
   <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
     <div class="card-body">
       <div class="flex justify-between items-start">
-        <h2 class="card-title">{{ problem.title }}</h2>
-        <div class="badge" :class="{
-          'badge-primary': problem.difficulty === 'Beginner',
-          'badge-secondary': problem.difficulty === 'Intermediate',
-          'badge-accent': problem.difficulty === 'Advanced'
-        }">{{ problem.difficulty }}</div>
+        <ProblemHeader :problem="problem" />
       </div>
       <p>{{ problem.description }}</p>
-      <div class="mt-2 flex items-center gap-2">
-        <div class="badge badge-outline">{{ problem.category }}</div>
-        <div class="text-xs">Time: {{ problem.estimatedTime }}</div>
-      </div>
       <div class="card-actions justify-between items-center mt-4">
         <div class="flex items-center gap-1">
           <span v-if="completed" class="text-success text-sm flex items-center">
@@ -40,6 +31,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useUserStore } from '~/stores/userStore';
+import ProblemHeader from '~/components/ProblemHeader.vue';
 
 const props = defineProps({
   problem: {
@@ -48,13 +40,23 @@ const props = defineProps({
   }
 });
 
-const userStore = useUserStore();
-
+// If the problem already has 'completed' and 'inProgress' properties, use those
+// Otherwise, compute them from the userStore
 const completed = computed(() => {
+  if ('completed' in props.problem) {
+    return props.problem.completed;
+  }
+  
+  const userStore = useUserStore();
   return userStore.progress.completedProblems.includes(props.problem.id);
 });
 
 const inProgress = computed(() => {
+  if ('inProgress' in props.problem) {
+    return props.problem.inProgress;
+  }
+  
+  const userStore = useUserStore();
   return userStore.progress.inProgressProblems.includes(props.problem.id);
 });
 </script>

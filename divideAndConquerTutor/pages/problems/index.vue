@@ -81,74 +81,32 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useProblemStore } from '~/stores/problemStore';
+import { useUserStore } from '~/stores/userStore';
 
 const filterDifficulty = ref('');
+const problemStore = useProblemStore();
+const userStore = useUserStore();
 
-const problems = [
-  {
-    id: 'merge-sort',
-    title: 'Merge Sort',
-    difficulty: 'Beginner',
-    category: 'Sorting',
-    estimatedTime: '20 mins',
-    description: 'Implement the merge sort algorithm that sorts an array using the divide-and-conquer approach.',
-    completed: false,
-    inProgress: false
-  },
-  {
-    id: 'binary-search',
-    title: 'Binary Search',
-    difficulty: 'Beginner',
-    category: 'Searching',
-    estimatedTime: '15 mins',
-    description: 'Implement a binary search algorithm to find a target element in a sorted array.',
-    completed: true,
-    inProgress: false
-  },
-  {
-    id: 'maximum-subarray',
-    title: 'Maximum Subarray',
-    difficulty: 'Intermediate',
-    category: 'Arrays',
-    estimatedTime: '30 mins',
-    description: 'Find the contiguous subarray that has the largest sum within a given array.',
-    completed: false,
-    inProgress: true
-  },
-  {
-    id: 'closest-pair',
-    title: 'Closest Pair of Points',
-    difficulty: 'Advanced',
-    category: 'Geometry',
-    estimatedTime: '45 mins',
-    description: 'Find the closest pair of points in a set of points in a 2D plane.',
-    completed: false,
-    inProgress: false
-  },
-  {
-    id: 'matrix-multiplication',
-    title: 'Strassen\'s Matrix Multiplication',
-    difficulty: 'Advanced',
-    category: 'Matrix Operations',
-    estimatedTime: '50 mins',
-    description: 'Implement Strassen\'s algorithm for multiplying matrices more efficiently.',
-    completed: false,
-    inProgress: false
-  },
-  {
-    id: 'quick-sort',
-    title: 'Quick Sort',
-    difficulty: 'Intermediate',
-    category: 'Sorting',
-    estimatedTime: '25 mins',
-    description: 'Implement the quick sort algorithm using a pivot-based approach.',
-    completed: false,
-    inProgress: false
-  }
-];
+// Get base problems from the store
+const baseProblems = computed(() => problemStore.allProblems);
+
+// Enhance the problems with progress information from user store
+const problems = computed(() => {
+  return baseProblems.value.map(problem => {
+    const isCompleted = userStore.progress.completedProblems.includes(problem.id);
+    const isInProgress = userStore.progress.inProgressProblems.includes(problem.id);
+    
+    return {
+      ...problem,
+      completed: isCompleted,
+      inProgress: isInProgress
+    };
+  });
+});
 
 const filteredProblems = computed(() => {
-  if (!filterDifficulty.value) return problems;
-  return problems.filter(problem => problem.difficulty === filterDifficulty.value);
+  if (!filterDifficulty.value) return problems.value;
+  return problems.value.filter(problem => problem.difficulty === filterDifficulty.value);
 });
 </script>
