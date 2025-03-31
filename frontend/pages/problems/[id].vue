@@ -9,9 +9,9 @@
           <h1 class="text-3xl font-bold">{{ problem.title }}</h1>
           <div class="mt-2 flex items-center gap-3">
             <div class="badge" :class="{
-              'badge-primary': problem.difficulty === 'Beginner',
-              'badge-secondary': problem.difficulty === 'Intermediate',
-              'badge-accent': problem.difficulty === 'Advanced'
+              'badge-primary': problem.difficulty === DIFFICULTY.BEGINNER,
+              'badge-secondary': problem.difficulty === DIFFICULTY.INTERMEDIATE,
+              'badge-accent': problem.difficulty === DIFFICULTY.ADVANCED
             }">{{ problem.difficulty }}</div>
             <div class="badge badge-outline">{{ problem.category }}</div>
             <div class="text-sm">Est. Time: {{ problem.estimatedTime }}</div>
@@ -110,13 +110,14 @@ import StepsProgress from '~/components/problem-interface/StepsProgress.vue';
 import StepNavigation from '~/components/problem-interface/StepNavigation.vue';
 import FeedbackMessage from '~/components/feedback/FeedbackMessage.vue';
 import AdaptiveFeedback from '~/components/feedback/AdaptiveFeedback.vue';
+import { DIFFICULTY, STEP_TYPE, QUESTION_TYPE } from '~/constants';
 
 // Register the step component types
 const stepComponents = {
-  'multiple-choice': MultipleChoiceQuestion,
-  'free-text': FreeTextQuestion,
-  'fill-in-blank': FillInBlankQuestion,
-  'drag-drop': DragDropQuestion
+  [QUESTION_TYPE.MULTIPLE_CHOICE]: MultipleChoiceQuestion,
+  [QUESTION_TYPE.FREE_TEXT]: FreeTextQuestion,
+  [QUESTION_TYPE.FILL_IN_BLANK]: FillInBlankQuestion,
+  [QUESTION_TYPE.DRAG_DROP]: DragDropQuestion
 };
 
 const route = useRoute();
@@ -216,12 +217,12 @@ const generateDetailedFeedback = (result) => {
   const feedback = [];
 
   // Handle multiple choice question with multiple correct answers
-  if (currentStep.value.type === 'multiple-choice' && Array.isArray(currentStep.value.data.correctAnswer)) {
+  if (currentStep.value.type === QUESTION_TYPE.MULTIPLE_CHOICE && Array.isArray(currentStep.value.data.correctAnswer)) {
     feedback.push('Select all correct options to proceed.');
   }
 
   // Handle fill-in-blank questions
-  if (currentStep.value.type === 'fill-in-blank' && result.partialResults) {
+  if (currentStep.value.type === QUESTION_TYPE.FILL_IN_BLANK && result.partialResults) {
     result.partialResults.forEach((correct, index) => {
       if (!correct) {
         feedback.push(`Answer ${index + 1} is incorrect.`);
@@ -230,7 +231,7 @@ const generateDetailedFeedback = (result) => {
   }
 
   // Handle drag-drop questions
-  if (currentStep.value.type === 'drag-drop') {
+  if (currentStep.value.type === QUESTION_TYPE.DRAG_DROP) {
     feedback.push('The order is not correct. Try a different arrangement.');
   }
 
@@ -278,7 +279,7 @@ const completeExercise = () => {
 // Helper method to convert step index to step type for BKT
 const getStepType = (stepIndex) => {
   if (!problem.value || !problem.value.steps || stepIndex >= problem.value.steps.length) {
-    return 'decomposition'; // Default
+    return STEP_TYPE.DECOMPOSITION; // Default
   }
 
   // Map step ID to skill type
@@ -286,14 +287,14 @@ const getStepType = (stepIndex) => {
 
   // Common step ID to skill type mapping
   const stepTypeMap = {
-    'decomposition': 'decomposition',
-    'base-case': 'base-case',
-    'recurrence': 'recurrence',
-    'pseudocode': 'pseudocode',
-    'algorithm-steps': 'pseudocode'
+    [STEP_TYPE.DECOMPOSITION]: STEP_TYPE.DECOMPOSITION,
+    [STEP_TYPE.BASE_CASE]: STEP_TYPE.BASE_CASE,
+    [STEP_TYPE.RECURRENCE]: STEP_TYPE.RECURRENCE,
+    [STEP_TYPE.PSEUDOCODE]: STEP_TYPE.PSEUDOCODE,
+    [STEP_TYPE.ALGORITHM_STEPS]: STEP_TYPE.PSEUDOCODE // Map algorithm steps ordering to pseudocode skill
   };
 
-  return stepTypeMap[stepId] || 'decomposition';
+  return stepTypeMap[stepId] || STEP_TYPE.DECOMPOSITION;
 };
 
 // Handle adaptive hints

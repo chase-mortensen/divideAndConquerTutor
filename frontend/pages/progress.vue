@@ -65,9 +65,9 @@
                 <td>{{ problem.title }}</td>
                 <td>
                   <div class="badge" :class="{
-                    'badge-success': problem.status === 'Completed',
-                    'badge-warning': problem.status === 'In Progress',
-                    'badge-neutral': problem.status === 'Not Started'
+                    'badge-success': problem.status === PROGRESS_STATUS.COMPLETED,
+                    'badge-warning': problem.status === PROGRESS_STATUS.IN_PROGRESS,
+                    'badge-neutral': problem.status === PROGRESS_STATUS.NOT_STARTED
                   }">{{ problem.status }}</div>
                 </td>
                 <td>{{ problem.attempts }}</td>
@@ -82,7 +82,7 @@
                 <td>{{ problem.lastAttempt }}</td>
                 <td>
                   <NuxtLink :to="`/problems/${problem.id}`" class="btn btn-xs btn-primary">
-                    {{ problem.status === 'Completed' ? 'Review' : 'Continue' }}
+                    {{ problem.status === PROGRESS_STATUS.COMPLETED ? 'Review' : 'Continue' }}
                   </NuxtLink>
                 </td>
               </tr>
@@ -136,6 +136,7 @@ import { computed } from 'vue';
 import { useProblemStore } from '~/stores/problemStore';
 import { useUserStore } from '~/stores/userStore';
 import KnowledgeModelDetails from '~/components/ui/KnowledgeModelDetails.vue';
+import { PROGRESS_STATUS, STEP_TYPE } from '~/constants';
 
 const problemStore = useProblemStore();
 const userStore = useUserStore();
@@ -161,7 +162,7 @@ const progressData = computed(() => {
     problemsById[problem.id] = {
       id: problem.id,
       title: problem.title,
-      status: 'Not Started',
+      status: PROGRESS_STATUS.NOT_STARTED,
       attempts: 0,
       accuracy: 0,
       lastAttempt: 'Never'
@@ -171,14 +172,14 @@ const progressData = computed(() => {
   // Update completed problems
   userStore.progress.completedProblems.forEach(id => {
     if (problemsById[id]) {
-      problemsById[id].status = 'Completed';
+      problemsById[id].status = PROGRESS_STATUS.COMPLETED;
     }
   });
 
   // Update in-progress problems
   userStore.progress.inProgressProblems.forEach(id => {
     if (problemsById[id]) {
-      problemsById[id].status = 'In Progress';
+      problemsById[id].status = PROGRESS_STATUS.IN_PROGRESS;
     }
   });
 
@@ -197,10 +198,10 @@ const progressData = computed(() => {
 // Get skill breakdown from user store
 const skillBreakdown = computed(() => {
   return [
-    { name: 'Problem Decomposition', mastery: userStore.progress.skillMastery.decomposition },
-    { name: 'Base Case Identification', mastery: userStore.progress.skillMastery['base-case'] },
-    { name: 'Recurrence Relations', mastery: userStore.progress.skillMastery.recurrence },
-    { name: 'Pseudocode Translation', mastery: userStore.progress.skillMastery.pseudocode }
+    { name: 'Problem Decomposition', mastery: userStore.progress.skillMastery[STEP_TYPE.DECOMPOSITION] },
+    { name: 'Base Case Identification', mastery: userStore.progress.skillMastery[STEP_TYPE.BASE_CASE] },
+    { name: 'Recurrence Relations', mastery: userStore.progress.skillMastery[STEP_TYPE.RECURRENCE] },
+    { name: 'Pseudocode Translation', mastery: userStore.progress.skillMastery[STEP_TYPE.PSEUDOCODE] }
   ];
 });
 

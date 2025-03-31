@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { DIFFICULTY, STEP_TYPE, QUESTION_TYPE } from '~/constants';
 
 export const useProblemStore = defineStore('problems', {
   state: () => ({
@@ -6,7 +7,7 @@ export const useProblemStore = defineStore('problems', {
       {
         id: 'merge-sort',
         title: 'Merge Sort',
-        difficulty: 'Beginner',
+        difficulty: DIFFICULTY.BEGINNER,
         category: 'Sorting',
         estimatedTime: '20 mins',
         description: 'The Merge Sort algorithm is a classic divide-and-conquer algorithm for sorting arrays. It works by recursively dividing the array in half, sorting each half, and then merging the sorted halves back together. Your task is to understand the divide-and-conquer aspects of the Merge Sort algorithm before implementing it.',
@@ -23,10 +24,10 @@ export const useProblemStore = defineStore('problems', {
         ],
         steps: [
           {
-            id: 'decomposition',
+            id: STEP_TYPE.DECOMPOSITION,
             title: 'Problem Decomposition',
             instructions: 'In the first step, you need to identify how the Merge Sort algorithm breaks down the original problem into smaller subproblems.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'How does the Merge Sort algorithm decompose the original sorting problem?',
               options: [
@@ -39,10 +40,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'base-case',
+            id: STEP_TYPE.BASE_CASE,
             title: 'Base Case Identification',
             instructions: 'Now, identify the base case for the Merge Sort recursion. The base case is the simplest instance of the problem that can be solved directly without further recursion.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'What is the base case for the Merge Sort algorithm?',
               options: [
@@ -55,10 +56,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'recurrence',
+            id: STEP_TYPE.RECURRENCE,
             title: 'Recurrence Relation',
             instructions: 'In this step, identify the recurrence relation that describes the time complexity of the Merge Sort algorithm.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'Which recurrence relation correctly describes the time complexity of Merge Sort?',
               options: [
@@ -71,22 +72,12 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'pseudocode',
+            id: STEP_TYPE.PSEUDOCODE,
             title: 'Pseudocode Translation',
             instructions: 'Now, write pseudocode for the Merge Sort algorithm. Make sure to include both the recursive Merge Sort function and the merge function that combines two sorted arrays.',
-            type: 'free-text',
+            type: QUESTION_TYPE.FREE_TEXT,
             data: {
-              question: 'Write pseudocode for the Merge Sort algorithm, including the merge function:',
-              validateFunc: (answer) => {
-                // This is a simplified validator for demo purposes
-                // In a real application, this would be more sophisticated
-                const lowerAnswer = answer.toLowerCase();
-                return lowerAnswer.includes('mergesort') && 
-                      lowerAnswer.includes('merge') && 
-                      lowerAnswer.includes('if') && 
-                      (lowerAnswer.includes('length') || lowerAnswer.includes('size')) &&
-                      lowerAnswer.includes('return');
-              }
+              question: 'Write pseudocode for the Merge Sort algorithm, including the merge function:'
             }
           }
         ]
@@ -94,7 +85,7 @@ export const useProblemStore = defineStore('problems', {
       {
         id: 'binary-search',
         title: 'Binary Search',
-        difficulty: 'Beginner',
+        difficulty: DIFFICULTY.BEGINNER,
         category: 'Searching',
         estimatedTime: '15 mins',
         description: 'Binary Search is an efficient algorithm for finding an item in a sorted list. It works by repeatedly dividing the search interval in half, eliminating the half where the target cannot be. Your task is to understand the divide-and-conquer aspects of the Binary Search algorithm.',
@@ -111,10 +102,10 @@ export const useProblemStore = defineStore('problems', {
         ],
         steps: [
           {
-            id: 'decomposition',
+            id: STEP_TYPE.DECOMPOSITION,
             title: 'Problem Decomposition',
             instructions: 'In the first step, you need to identify how Binary Search divides the problem into smaller subproblems.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'How does Binary Search decompose the original search problem?',
               options: [
@@ -127,10 +118,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'base-case',
+            id: STEP_TYPE.BASE_CASE,
             title: 'Base Case Identification',
             instructions: 'Now, identify the base cases for Binary Search.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'What are the base cases for Binary Search? (Select all that apply)',
               options: [
@@ -143,10 +134,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'recurrence',
+            id: STEP_TYPE.RECURRENCE,
             title: 'Recurrence Relation',
             instructions: 'In this step, identify the recurrence relation that describes the time complexity of Binary Search.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'Which recurrence relation correctly describes the time complexity of Binary Search?',
               options: [
@@ -159,20 +150,12 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'pseudocode',
+            id: STEP_TYPE.PSEUDOCODE,
             title: 'Pseudocode Translation',
             instructions: 'Now, write pseudocode for the Binary Search algorithm.',
-            type: 'free-text',
+            type: QUESTION_TYPE.FREE_TEXT,
             data: {
-              question: 'Write pseudocode for the Binary Search algorithm:',
-              validateFunc: (answer) => {
-                const lowerAnswer = answer.toLowerCase();
-                return lowerAnswer.includes('mid') && 
-                      (lowerAnswer.includes('left') || lowerAnswer.includes('low')) && 
-                      (lowerAnswer.includes('right') || lowerAnswer.includes('high')) && 
-                      lowerAnswer.includes('if') && 
-                      lowerAnswer.includes('return');
-              }
+              question: 'Write pseudocode for the Binary Search algorithm:'
             }
           }
         ]
@@ -180,7 +163,7 @@ export const useProblemStore = defineStore('problems', {
       {
         id: 'maximum-subarray',
         title: 'Maximum Subarray',
-        difficulty: 'Intermediate',
+        difficulty: DIFFICULTY.INTERMEDIATE,
         category: 'Arrays',
         estimatedTime: '30 mins',
         description: 'The Maximum Subarray problem asks you to find the contiguous subarray with the largest sum within a given array. This problem can be efficiently solved using a divide-and-conquer approach.',
@@ -197,10 +180,10 @@ export const useProblemStore = defineStore('problems', {
         ],
         steps: [
           {
-            id: 'decomposition',
+            id: STEP_TYPE.DECOMPOSITION,
             title: 'Problem Decomposition',
             instructions: 'In the first step, you need to identify how to decompose the Maximum Subarray problem.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'How would you decompose the Maximum Subarray problem using divide-and-conquer?',
               options: [
@@ -213,10 +196,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'base-case',
+            id: STEP_TYPE.BASE_CASE,
             title: 'Base Case Identification',
             instructions: 'Now, identify the base case for the Maximum Subarray problem.',
-            type: 'fill-in-blank',
+            type: QUESTION_TYPE.FILL_IN_BLANK,
             data: {
               question: 'Complete the base case for the Maximum Subarray algorithm:',
               questionText: 'If the array has [blank] element(s), the maximum subarray is the [blank] itself with sum equal to the [blank] of that element.',
@@ -228,10 +211,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'recurrence',
+            id: STEP_TYPE.RECURRENCE,
             title: 'Recurrence Relation',
             instructions: 'In this step, identify the recurrence relation that describes the time complexity of the Maximum Subarray algorithm.',
-            type: 'multiple-choice',
+            type: QUESTION_TYPE.MULTIPLE_CHOICE,
             data: {
               question: 'Which recurrence relation correctly describes the time complexity of the Maximum Subarray algorithm?',
               options: [
@@ -244,10 +227,10 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'algorithm-steps',
+            id: STEP_TYPE.ALGORITHM_STEPS,
             title: 'Algorithm Steps',
             instructions: 'Put the steps of the Maximum Subarray algorithm in the correct order.',
-            type: 'drag-drop',
+            type: QUESTION_TYPE.DRAG_DROP,
             data: {
               question: 'Arrange the following steps of the Maximum Subarray algorithm in the correct order:',
               items: [
@@ -267,19 +250,19 @@ export const useProblemStore = defineStore('problems', {
             }
           },
           {
-            id: 'pseudocode',
+            id: STEP_TYPE.PSEUDOCODE,
             title: 'Pseudocode Translation',
             instructions: 'Now, write pseudocode for the Maximum Subarray algorithm.',
-            type: 'free-text',
+            type: QUESTION_TYPE.FREE_TEXT,
             data: {
               question: 'Write pseudocode for the Maximum Subarray algorithm, including the function to find the maximum subarray that crosses the midpoint:',
               validateFunc: (answer) => {
                 const lowerAnswer = answer.toLowerCase();
-                return lowerAnswer.includes('max') && 
-                       lowerAnswer.includes('mid') && 
-                       lowerAnswer.includes('left') && 
-                       lowerAnswer.includes('right') && 
-                       lowerAnswer.includes('cross') && 
+                return lowerAnswer.includes('max') &&
+                       lowerAnswer.includes('mid') &&
+                       lowerAnswer.includes('left') &&
+                       lowerAnswer.includes('right') &&
+                       lowerAnswer.includes('cross') &&
                        lowerAnswer.includes('return');
               }
             }
@@ -290,25 +273,25 @@ export const useProblemStore = defineStore('problems', {
     ],
     currentProblemId: null
   }),
-  
+
   getters: {
     allProblems: (state) => state.problems,
-    
+
     problemById: (state) => (id) => {
       return state.problems.find(p => p.id === id);
     },
-    
+
     problemsByDifficulty: (state) => (difficulty) => {
       if (!difficulty) return state.problems;
       return state.problems.filter(p => p.difficulty === difficulty);
     },
-    
+
     currentProblem: (state) => {
       if (!state.currentProblemId) return null;
       return state.problems.find(p => p.id === state.currentProblemId);
     }
   },
-  
+
   actions: {
     setCurrentProblem(id) {
       this.currentProblemId = id;
