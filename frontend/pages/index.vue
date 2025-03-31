@@ -11,10 +11,10 @@
         </div>
       </div>
     </div>
-    
+
     <div class="mt-12">
       <h2 class="text-3xl font-bold text-center mb-8">How It Works</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
             <h3 class="card-title">1. Problem Decomposition</h3>
@@ -33,9 +33,7 @@
             <p>Formulate mathematical equations that define how subproblem solutions combine.</p>
           </div>
         </div>
-      </div>
-      <div class="mt-6 text-center">
-        <div class="card bg-base-100 shadow-xl mx-auto max-w-md">
+        <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
             <h3 class="card-title">4. Pseudocode Translation</h3>
             <p>Transform your solution approach into structured pseudocode before implementation.</p>
@@ -43,7 +41,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="mt-12">
       <h2 class="text-3xl font-bold text-center mb-8">Featured Problems</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -4,10 +4,10 @@
       <div class="font-medium mb-2">{{ data.question }}</div>
       <div v-for="(option, index) in data.options" :key="index" class="form-control">
         <label class="label cursor-pointer justify-start gap-4">
-          <input 
-            type="radio" 
-            name="question" 
-            class="radio" 
+          <input
+            type="radio"
+            name="question"
+            class="radio"
             :value="option"
             v-model="selectedOption"
           />
@@ -41,3 +41,9 @@ const submitAnswer = () => {
   });
 };
 </script>
+
+<style lang="css" scoped>
+.label-text {
+  white-space: wrap;
+}
+</style>

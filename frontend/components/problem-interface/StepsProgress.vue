@@ -1,10 +1,10 @@
 <template>
   <div class="mb-6">
-    <ul class="steps steps-horizontal w-full">
-      <li 
-        v-for="(step, index) in steps" 
+    <ul class="steps steps-vertical md:steps-horizontal w-full">
+      <li
+        v-for="(step, index) in steps"
         :key="index"
-        class="step" 
+        class="step"
         :class="{ 'step-primary': currentStep >= index }"
       >
         {{ step.title }}
