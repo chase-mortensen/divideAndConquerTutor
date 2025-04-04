@@ -50,9 +50,9 @@
             <div class="flex justify-between items-start">
               <h3 class="card-title">{{ problem.title }}</h3>
               <div class="badge" :class="{
-                'badge-primary': problem.difficulty === 'Beginner',
-                'badge-secondary': problem.difficulty === 'Intermediate',
-                'badge-accent': problem.difficulty === 'Advanced'
+                'badge-primary': problem.difficulty === DIFFICULTY.BEGINNER,
+                'badge-secondary': problem.difficulty === DIFFICULTY.INTERMEDIATE,
+                'badge-accent': problem.difficulty === DIFFICULTY.ADVANCED
               }">{{ problem.difficulty }}</div>
             </div>
             <p>{{ problem.description }}</p>
@@ -67,42 +67,9 @@
 </template>
 
 <script setup>
-const featuredProblems = [
-  {
-    id: 'merge-sort',
-    title: 'Merge Sort',
-    difficulty: 'Beginner',
-    description: 'Implement the merge sort algorithm that sorts an array using the divide-and-conquer approach.'
-  },
-  {
-    id: 'binary-search',
-    title: 'Binary Search',
-    difficulty: 'Beginner',
-    description: 'Implement a binary search algorithm to find a target element in a sorted array.'
-  },
-  {
-    id: 'maximum-subarray',
-    title: 'Maximum Subarray',
-    difficulty: 'Intermediate',
-    description: 'Find the contiguous subarray that has the largest sum within a given array.'
-  },
-  {
-    id: 'closest-pair',
-    title: 'Closest Pair of Points',
-    difficulty: 'Advanced',
-    description: 'Find the closest pair of points in a set of points in a 2D plane.'
-  },
-  {
-    id: 'matrix-multiplication',
-    title: 'Strassen\'s Matrix Multiplication',
-    difficulty: 'Advanced',
-    description: 'Implement Strassen\'s algorithm for multiplying matrices more efficiently.'
-  },
-  {
-    id: 'quick-sort',
-    title: 'Quick Sort',
-    difficulty: 'Intermediate',
-    description: 'Implement the quick sort algorithm using a pivot-based approach.'
-  }
-];
+import { useProblemStore } from '~/stores/problemStore';
+import { DIFFICULTY } from '~/constants';
+
+const problemStore = useProblemStore();
+const featuredProblems = problemStore.featuredProblems;
 </script>

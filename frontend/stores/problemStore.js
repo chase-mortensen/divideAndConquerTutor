@@ -9,6 +9,7 @@ export const useProblemStore = defineStore('problems', {
         title: 'Merge Sort',
         difficulty: DIFFICULTY.BEGINNER,
         category: 'Sorting',
+        featured: true,
         estimatedTime: '20 mins',
         description: 'The Merge Sort algorithm is a classic divide-and-conquer algorithm for sorting arrays. It works by recursively dividing the array in half, sorting each half, and then merging the sorted halves back together. Your task is to understand the divide-and-conquer aspects of the Merge Sort algorithm before implementing it.',
         learningObjectives: [
@@ -87,6 +88,7 @@ export const useProblemStore = defineStore('problems', {
         title: 'Binary Search',
         difficulty: DIFFICULTY.BEGINNER,
         category: 'Searching',
+        featured: true,
         estimatedTime: '15 mins',
         description: 'Binary Search is an efficient algorithm for finding an item in a sorted list. It works by repeatedly dividing the search interval in half, eliminating the half where the target cannot be. Your task is to understand the divide-and-conquer aspects of the Binary Search algorithm.',
         learningObjectives: [
@@ -165,6 +167,7 @@ export const useProblemStore = defineStore('problems', {
         title: 'Maximum Subarray',
         difficulty: DIFFICULTY.INTERMEDIATE,
         category: 'Arrays',
+        featured: true,
         estimatedTime: '30 mins',
         description: 'The Maximum Subarray problem asks you to find the contiguous subarray with the largest sum within a given array. This problem can be efficiently solved using a divide-and-conquer approach.',
         learningObjectives: [
@@ -269,6 +272,69 @@ export const useProblemStore = defineStore('problems', {
           }
         ]
       },
+      {
+        id: 'closest-pair',
+        title: 'Closest Pair of Points',
+        difficulty: DIFFICULTY.ADVANCED,
+        category: 'Computational Geometry',
+        featured: true,
+        estimatedTime: '45 mins',
+        description: 'Find the closest pair of points in a set of points in a 2D plane.',
+        learningObjectives: [
+          'Understand how to decompose a geometric problem',
+          'Identify appropriate base cases for the recursion',
+          'Formulate a strategy for combining solutions across the dividing line',
+          'Implement the algorithm in pseudocode'
+        ],
+        hints: [
+          'Consider the case where the closest pair spans across the dividing line',
+          'Sorting points can help optimize the search',
+          'The base case is typically handled with a brute force approach'
+        ],
+        steps: []
+      },
+      {
+        id: 'matrix-multiplication',
+        title: 'Strassen\'s Matrix Multiplication',
+        difficulty: DIFFICULTY.ADVANCED,
+        category: 'Linear Algebra',
+        featured: true,
+        estimatedTime: '60 mins',
+        description: 'Implement Strassen\'s algorithm for multiplying matrices more efficiently.',
+        learningObjectives: [
+          'Understand how to decompose matrix multiplication',
+          'Identify base cases for the recursion',
+          'Apply algebraic transformations to reduce the number of recursive multiplications',
+          'Implement the algorithm in pseudocode'
+        ],
+        hints: [
+          'Standard matrix multiplication uses 8 recursive multiplications',
+          'Strassen\'s algorithm reduces this to 7 multiplications',
+          'The base case is typically small matrices that can be multiplied directly'
+        ],
+        steps: []
+      },
+      {
+        id: 'quick-sort',
+        title: 'Quick Sort',
+        difficulty: DIFFICULTY.INTERMEDIATE,
+        category: 'Sorting',
+        featured: true,
+        estimatedTime: '30 mins',
+        description: 'Implement the quick sort algorithm using a pivot-based approach.',
+        learningObjectives: [
+          'Understand how to select and use a pivot element',
+          'Identify appropriate base cases for the recursion',
+          'Analyze the time complexity under different scenarios',
+          'Implement the algorithm in pseudocode'
+        ],
+        hints: [
+          'Consider how different pivot selection strategies affect performance',
+          'The base case is typically small arrays that can be sorted directly',
+          'The partition step is the key to the algorithm\'s efficiency'
+        ],
+        steps: []
+      },
       // Additional problems would be defined here
     ],
     currentProblemId: null
@@ -284,6 +350,10 @@ export const useProblemStore = defineStore('problems', {
     problemsByDifficulty: (state) => (difficulty) => {
       if (!difficulty) return state.problems;
       return state.problems.filter(p => p.difficulty === difficulty);
+    },
+
+    featuredProblems: (state) => {
+      return state.problems.filter(p => p.featured === true);
     },
 
     currentProblem: (state) => {
