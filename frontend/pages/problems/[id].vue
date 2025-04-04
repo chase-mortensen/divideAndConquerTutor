@@ -247,7 +247,7 @@ const previousStep = () => {
 };
 
 const nextStep = () => {
-  if (currentStepIndex.value < steps.length - 1) {
+  if (currentStepIndex.value < steps.value.length - 1) {
     currentStepIndex.value++;
     resetFeedback();
     currentHintIndex.value = 0; // Reset hint index when changing steps
