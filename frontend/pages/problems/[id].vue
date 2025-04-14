@@ -62,7 +62,7 @@
 
       <StepsProgress :steps="steps" :current-step="currentStepIndex" />
 
-      <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card bg-base-100 shadow-xl mb-8" v-if="currentStep">
         <div class="card-body">
           <h2 class="card-title">{{ currentStep.title }}</h2>
           <p class="mb-4">{{ currentStep.instructions }}</p>
@@ -93,6 +93,10 @@
           />
         </div>
       </div>
+      <h2
+        v-else
+        class="text-xl font-bold"
+      >Missing Steps</h2>
     </div>
   </NuxtLayout>
 </template>
@@ -140,10 +144,10 @@ const currentHintIndex = ref(0);
 const steps = computed(() => {
   if (!problem.value) return [];
   return problem.value.steps.map(step => ({
-    title: step.title,
-    instructions: step.instructions,
-    type: step.type,
-    data: step.data
+    title: step?.title,
+    instructions: step?.instructions,
+    type: step?.type,
+    data: step?.data
   }));
 });
 

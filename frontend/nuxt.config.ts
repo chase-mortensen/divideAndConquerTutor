@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import tailwindcss from "@tailwindcss/vite";
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
@@ -6,17 +8,13 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
   css: [
     '~/assets/css/main.css',
   ],
-
-  postcss: {
-    plugins: {
-      'postcss-import': {},
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
 
   app: {
     head: {
@@ -25,7 +23,6 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
-          hid: 'description',
           name: 'description',
           content: 'An educational web application designed to help computer science students learn and practice divide-and-conquer problem-solving techniques.'
         }
@@ -34,7 +31,7 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       ],
       htmlAttrs: {
-        'data-theme': 'lofi'
+        'data-theme': 'nord'
       }
     }
   },

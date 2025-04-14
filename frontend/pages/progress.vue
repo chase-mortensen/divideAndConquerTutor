@@ -127,7 +127,7 @@
     </div>
 
     <!-- Knowledge Model Visualization -->
-    <KnowledgeModelDetails :initial-skill="lowestSkill" />
+    <KnowledgeModelDetails v-if="lowestSkill" :initial-skill="lowestSkill" />
   </NuxtLayout>
 </template>
 
