@@ -2,27 +2,23 @@ import { themeChange } from 'theme-change'
 
 export default defineNuxtPlugin(nuxtApp => {
   if (process.client) {
+    // Initialize after app is mounted
     nuxtApp.hook('app:mounted', () => {
-      themeChange(false) // false = no auto-detect dark mode
+      // Initialize theme change
+      themeChange(false)
+      console.log('Theme change initialized')
       
-      // Set default theme if none is selected
+      // Set default theme if none exists
       if (!localStorage.getItem('theme')) {
         localStorage.setItem('theme', 'lofi')
       }
       
       // Apply theme from localStorage
       const currentTheme = localStorage.getItem('theme') || 'lofi'
-      document.documentElement.setAttribute('data-theme', currentTheme)
-      
-      // Manual theme toggle handler for more reliability
-      const themeToggle = document.getElementById('theme-toggle')
-      if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-          const newTheme = currentTheme === 'lofi' ? 'forest' : 'lofi'
-          localStorage.setItem('theme', newTheme)
-          document.documentElement.setAttribute('data-theme', newTheme)
-        })
-      }
+      setTimeout(() => {
+        document.documentElement.setAttribute('data-theme', currentTheme)
+        console.log('Theme set to:', currentTheme)
+      }, 100)
     })
   }
 })

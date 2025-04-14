@@ -6,10 +6,13 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
-  css: ['~/assets/css/main.css'],
+  css: [
+    '~/assets/css/main.css',
+  ],
 
   postcss: {
     plugins: {
+      'postcss-import': {},
       tailwindcss: {},
       autoprefixer: {},
     },
@@ -21,16 +24,18 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { 
-          hid: 'description', 
-          name: 'description', 
+        {
+          hid: 'description',
+          name: 'description',
           content: 'An educational web application designed to help computer science students learn and practice divide-and-conquer problem-solving techniques.'
         }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ]
-      // Removed static data-theme to allow dynamic theme switching
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      ],
+      htmlAttrs: {
+        'data-theme': 'lofi'
+      }
     }
   },
 
