@@ -259,15 +259,7 @@ export const useProblemStore = defineStore('problems', {
             type: QUESTION_TYPE.FREE_TEXT,
             data: {
               question: 'Write pseudocode for the Maximum Subarray algorithm, including the function to find the maximum subarray that crosses the midpoint:',
-              validateFunc: (answer) => {
-                const lowerAnswer = answer.toLowerCase();
-                return lowerAnswer.includes('max') &&
-                       lowerAnswer.includes('mid') &&
-                       lowerAnswer.includes('left') &&
-                       lowerAnswer.includes('right') &&
-                       lowerAnswer.includes('cross') &&
-                       lowerAnswer.includes('return');
-              }
+              validationKeywords: ['max', 'mid', 'left', 'right', 'cross', 'return']
             }
           }
         ]

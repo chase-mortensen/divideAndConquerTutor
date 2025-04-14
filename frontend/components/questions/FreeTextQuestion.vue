@@ -28,9 +28,16 @@ const emit = defineEmits(['submit']);
 const answer = ref('');
 
 const submitAnswer = () => {
-  // Call the validation function from props
-  const isCorrect = props.data.validateFunc(answer.value);
+  // Check for required keywords if validationKeywords exists
+  let isCorrect = true;
   
+  if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
+    const lowerAnswer = answer.value.toLowerCase();
+    isCorrect = props.data.validationKeywords.every(keyword => 
+      lowerAnswer.includes(keyword.toLowerCase())
+    );
+  }
+
   emit('submit', {
     answer: answer.value,
     correct: isCorrect
