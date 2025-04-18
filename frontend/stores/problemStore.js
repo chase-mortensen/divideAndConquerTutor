@@ -19,9 +19,9 @@ export const useProblemStore = defineStore('problems', {
           'Develop correct pseudocode for the Merge Sort algorithm'
         ],
         hints: [
-          'Think about what is the smallest array size that you can sort without recursion',
-          'Consider how to merge two already sorted arrays efficiently',
-          'The recurrence relation should express the time as a function of the input size'
+          'Merge Sort is a general divide-and-conquer algorithm for sorting',
+          'Think about how the problem is broken down recursively',
+          'Consider the efficiency advantages of this approach'
         ],
         steps: [
           {
@@ -38,7 +38,12 @@ export const useProblemStore = defineStore('problems', {
                 'It identifies already sorted subarrays'
               ],
               correctAnswer: 'It divides the array in half regardless of the values'
-            }
+            },
+            hints: [
+              'Think about whether the algorithm considers the values when dividing the array',
+              'Consider how the algorithm splits the original problem into subproblems',
+              'In a divide-and-conquer approach, how is the "divide" step implemented?'
+            ]
           },
           {
             id: STEP_TYPE.BASE_CASE,
@@ -54,7 +59,12 @@ export const useProblemStore = defineStore('problems', {
                 'A sorted array of any size'
               ],
               correctAnswer: 'An array of size 1'
-            }
+            },
+            hints: [
+              'Think about what is the smallest array size that you can sort without recursion',
+              'Consider when the recursion should stop dividing the array further',
+              'What is the simplest case that can be solved directly?'
+            ]
           },
           {
             id: STEP_TYPE.RECURRENCE,
@@ -70,7 +80,12 @@ export const useProblemStore = defineStore('problems', {
                 'T(n) = T(n-1) + O(n)'
               ],
               correctAnswer: 'T(n) = 2T(n/2) + O(n)'
-            }
+            },
+            hints: [
+              'The recurrence relation should express the time as a function of the input size',
+              'Consider the number of recursive calls made and the work done at each level',
+              'Think about the cost of the merge operation relative to the input size'
+            ]
           },
           {
             id: STEP_TYPE.PSEUDOCODE,
@@ -79,7 +94,12 @@ export const useProblemStore = defineStore('problems', {
             type: QUESTION_TYPE.FREE_TEXT,
             data: {
               question: 'Write pseudocode for the Merge Sort algorithm, including the merge function:'
-            }
+            },
+            hints: [
+              'Start with the main mergeSort function that takes an array parameter',
+              'Consider how to merge two already sorted arrays efficiently',
+              'Make sure your pseudocode handles all the cases, including the base case'
+            ]
           }
         ]
       },

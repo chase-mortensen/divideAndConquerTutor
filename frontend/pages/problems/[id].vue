@@ -56,7 +56,7 @@
           :step-id="currentStep?.id"
           :step-type="getStepType(currentStepIndex)"
           :difficulty="problem.difficulty"
-          :hints="problem.hints"
+          :hints="getStepHints(currentStepIndex)"
           :show-hint="showHints"
           :question-type="currentStep?.type"
           :last-attempt-correct="lastSubmissionCorrect"
@@ -443,6 +443,20 @@ const getCurrentStepAttemptCount = () => {
 const handleAdaptiveHint = (hint) => {
   feedbackMessage.value = hint;
   isHintMessage.value = true;
+};
+
+// Get step-specific hints or fall back to problem-level hints
+const getStepHints = (stepIndex) => {
+  if (!problem.value) return [];
+  
+  // Try to get step-specific hints if available
+  const step = problem.value.steps[stepIndex];
+  if (step && step.hints && step.hints.length > 0) {
+    return step.hints;
+  }
+  
+  // Fall back to problem-level hints
+  return problem.value.hints || [];
 };
 
 // Lifecycle hooks
