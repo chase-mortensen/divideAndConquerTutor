@@ -2,27 +2,29 @@
   <div>
     <div class="mb-4">
       <div class="font-medium mb-2">{{ data.question }}</div>
-      
+
       <!-- For pseudocode questions, use styled text area with dark mode and monospace font -->
       <div v-if="isPseudocodeQuestion" class="relative border rounded overflow-hidden" style="min-height: 300px;">
-        <div class="absolute left-0 top-0 px-3 py-2 w-12 bottom-0 bg-neutral text-neutral-content text-right font-mono text-sm border-r" aria-hidden="true">
-          <div v-for="i in lineCount" :key="i" class="line-number">{{ i }}</div>
+        <div class="absolute left-0 top-0 px-3 py-2 w-12 bottom-0 bg-neutral text-neutral-content text-right font-mono border-r" aria-hidden="true">
+          <div class="pt-[1px]">
+            <div v-for="i in lineCount" :key="i" class="line-number">{{ i }}</div>
+          </div>
         </div>
-        <textarea 
+        <textarea
           ref="codeEditor"
-          v-model="answer" 
+          v-model="answer"
           class="w-full h-full min-h-[300px] px-1 py-2 pl-14 font-mono bg-neutral text-neutral-content resize-y"
           placeholder="Enter your pseudocode here..."
-          style="tab-size: 2; -moz-tab-size: 2;"
+          style="tab-size: 2; -moz-tab-size: 2; line-height: 1.6;"
           @input="updateLineCount"
           @keydown.tab.prevent="handleTab"
         ></textarea>
       </div>
-      
+
       <!-- Regular text area for non-code questions -->
-      <textarea 
+      <textarea
         v-else
-        v-model="answer" 
+        v-model="answer"
         class="textarea textarea-bordered w-full h-32"
         placeholder="Enter your answer here..."
       ></textarea>
@@ -56,7 +58,7 @@ const problemStore = useProblemStore();
 const isPseudocodeQuestion = computed(() => {
   // Determine if this is a pseudocode question by looking at context
   // Check if the question text contains pseudocode or the parent step type is pseudocode
-  return props.data.isPseudocode || 
+  return props.data.isPseudocode ||
          props.data.question?.toLowerCase().includes('pseudocode') ||
          props.data.stepType === STEP_TYPE.PSEUDOCODE;
 });
@@ -72,11 +74,11 @@ const handleTab = (e) => {
   // Insert two spaces where the cursor is
   const start = e.target.selectionStart;
   const end = e.target.selectionEnd;
-  
+
   // Insert tab (2 spaces)
   const newValue = answer.value.substring(0, start) + '  ' + answer.value.substring(end);
   answer.value = newValue;
-  
+
   // Move cursor after the inserted spaces
   setTimeout(() => {
     e.target.selectionStart = e.target.selectionEnd = start + 2;
@@ -95,19 +97,22 @@ const submitAnswer = () => {
   // Default validation (for non-pseudocode questions)
   let isCorrect = true;
   let feedbackDetails = [];
-  
+
   if (isPseudocodeQuestion.value) {
-    // Use the pseudocode analyzer for detailed feedback 
+    // Use the pseudocode analyzer for detailed feedback
     const currentProblemId = problemStore.currentProblem?.id;
+    console.log('Current problem ID:', currentProblemId);
     if (currentProblemId) {
       const analysis = analyzePseudocode(currentProblemId, answer.value);
+      console.log('Pseudocode analysis:', analysis);
       isCorrect = analysis.isCorrect;
       feedbackDetails = analysis.detailedFeedback || [];
+      console.log('Feedback details:', feedbackDetails);
     } else {
       // Fall back to keyword validation if problem ID not available
       if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
         const lowerAnswer = answer.value.toLowerCase();
-        isCorrect = props.data.validationKeywords.every(keyword => 
+        isCorrect = props.data.validationKeywords.every(keyword =>
           lowerAnswer.includes(keyword.toLowerCase())
         );
       }
@@ -115,7 +120,7 @@ const submitAnswer = () => {
   } else if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
     // Basic keyword validation for non-pseudocode questions
     const lowerAnswer = answer.value.toLowerCase();
-    isCorrect = props.data.validationKeywords.every(keyword => 
+    isCorrect = props.data.validationKeywords.every(keyword =>
       lowerAnswer.includes(keyword.toLowerCase())
     );
   }
@@ -134,6 +139,7 @@ const submitAnswer = () => {
   user-select: none;
   color: rgba(255, 255, 255, 0.3);
   font-size: 0.9em;
+  line-height: 1.6;
 }
 
 textarea {

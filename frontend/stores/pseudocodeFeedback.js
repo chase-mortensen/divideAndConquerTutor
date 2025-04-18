@@ -13,52 +13,98 @@
  * @returns {Object} Analysis result with validation and feedback
  */
 export function analyzePseudocode(problemId, pseudocode) {
-  if (!pseudocode || pseudocode.trim() === '') {
+  try {
+    console.log(`Analyzing pseudocode for problem ${problemId}`);
+    console.log(`Input pseudocode:`, pseudocode);
+    
+    if (!pseudocode || pseudocode.trim() === '') {
+      console.log('Empty pseudocode submitted');
+      return {
+        isCorrect: false,
+        feedback: "Please enter your pseudocode solution.",
+        detailedFeedback: ["Your answer is empty. Please write some pseudocode."]
+      };
+    }
+
+    // Clean the input by removing comments and excess whitespace
+    const cleanedCode = cleanPseudocode(pseudocode);
+    console.log('Cleaned code:', cleanedCode);
+    
+    // Get problem-specific validation strategy
+    const validationStrategy = getValidationForProblem(problemId);
+    console.log('Using validation strategy for:', problemId);
+    
+    // Analyze overall structure
+    const structureAnalysis = analyzeStructure(cleanedCode);
+    console.log('Structure analysis:', structureAnalysis);
+    
+    // Check for required patterns in divide-and-conquer pseudocode
+    const patternAnalysis = analyzeDivideAndConquerPatterns(cleanedCode);
+    console.log('Pattern analysis:', patternAnalysis);
+    
+    // Perform problem-specific validation
+    let specificAnalysis;
+    try {
+      specificAnalysis = validationStrategy.validate(cleanedCode);
+      console.log('Specific analysis:', specificAnalysis);
+    } catch (error) {
+      console.error('Error during specific validation:', error);
+      specificAnalysis = { isValid: false, feedback: ["Error validating your code. Try using a clearer structure."] };
+    }
+    
+    // Combine analysis results to determine overall correctness
+    const isCorrect = 
+      structureAnalysis.isValid && 
+      patternAnalysis.hasRequiredPatterns &&
+      specificAnalysis.isValid;
+    
+    // Generate appropriate feedback based on the analysis
+    const feedback = generateFeedback(
+      structureAnalysis, 
+      patternAnalysis, 
+      specificAnalysis, 
+      validationStrategy.expectedStructure
+    );
+    
+    console.log('Generated feedback:', feedback);
+    
+    // Make sure detailedFeedback is always an array
+    const detailedFeedback = feedback.details || [];
+    
+    // Force some feedback if there's none (fallback)
+    if (detailedFeedback.length === 0) {
+      detailedFeedback.push("Your pseudocode needs improvement. Try including base cases, divide steps, and combine steps.");
+    }
+    
+    const result = {
+      isCorrect,
+      feedback: feedback.message,
+      detailedFeedback: detailedFeedback,
+      analysis: {
+        structure: structureAnalysis,
+        patterns: patternAnalysis,
+        specific: specificAnalysis
+      }
+    };
+    
+    console.log('Final analysis result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error in analyzePseudocode:', error);
+    // Return a fallback result with helpful feedback
     return {
       isCorrect: false,
-      feedback: "Please enter your pseudocode solution."
+      feedback: "There was an error analyzing your pseudocode.",
+      detailedFeedback: [
+        "Please make sure your pseudocode follows these guidelines:",
+        "1. Define a function with parameters",
+        "2. Include a base case for the simplest version of the problem",
+        "3. Divide the problem into smaller subproblems",
+        "4. Recursively solve each subproblem",
+        "5. Combine the subproblem solutions"
+      ]
     };
   }
-
-  // Clean the input by removing comments and excess whitespace
-  const cleanedCode = cleanPseudocode(pseudocode);
-  
-  // Get problem-specific validation strategy
-  const validationStrategy = getValidationForProblem(problemId);
-  
-  // Analyze overall structure
-  const structureAnalysis = analyzeStructure(cleanedCode);
-  
-  // Check for required patterns in divide-and-conquer pseudocode
-  const patternAnalysis = analyzeDivideAndConquerPatterns(cleanedCode);
-  
-  // Perform problem-specific validation
-  const specificAnalysis = validationStrategy.validate(cleanedCode);
-  
-  // Combine analysis results to determine overall correctness
-  const isCorrect = 
-    structureAnalysis.isValid && 
-    patternAnalysis.hasRequiredPatterns &&
-    specificAnalysis.isValid;
-  
-  // Generate appropriate feedback based on the analysis
-  const feedback = generateFeedback(
-    structureAnalysis, 
-    patternAnalysis, 
-    specificAnalysis, 
-    validationStrategy.expectedStructure
-  );
-  
-  return {
-    isCorrect,
-    feedback: feedback.message,
-    detailedFeedback: feedback.details,
-    analysis: {
-      structure: structureAnalysis,
-      patterns: patternAnalysis,
-      specific: specificAnalysis
-    }
-  };
 }
 
 /**
@@ -249,14 +295,22 @@ function generateFeedback(structureAnalysis, patternAnalysis, specificAnalysis, 
   }
   
   // Problem-specific feedback
-  if (!specificAnalysis.isValid && specificAnalysis.feedback) {
+  if (specificAnalysis.feedback && specificAnalysis.feedback.length > 0) {
     // Add the problem-specific feedback
     details.push(...specificAnalysis.feedback);
   }
   
   // Add a reminder about the expected structure
-  if (expectedStructure && !specificAnalysis.isValid) {
-    details.push(`Remember that the pseudocode should follow this general structure: ${expectedStructure}`);
+  if (expectedStructure) {
+    details.push(`Your pseudocode should follow this general structure:\n${expectedStructure}`);
+  }
+  
+  // If we still don't have any details, add general D&C guidance
+  if (details.length === 0) {
+    details.push("Remember the three key components of divide-and-conquer:");
+    details.push("1. Base case - handle the simplest version directly");
+    details.push("2. Divide - break the problem into smaller subproblems");
+    details.push("3. Combine - merge the solutions of subproblems into the final solution");
   }
   
   return {
@@ -278,7 +332,22 @@ function getValidationForProblem(problemId) {
     'matrix-multiplication': validateMatrixMultiplication
   };
   
-  return strategies[problemId] || defaultValidation;
+  // Make sure to call the function to get the strategy object
+  const validationFunction = strategies[problemId] || defaultValidation;
+  console.log("Using validation function:", validationFunction.name || 'defaultValidation');
+  
+  try {
+    const strategy = validationFunction();
+    // Make sure the returned strategy has a validate method
+    if (typeof strategy.validate !== 'function') {
+      console.error("Invalid validation strategy - missing validate function");
+      return defaultValidation();
+    }
+    return strategy;
+  } catch (error) {
+    console.error("Error getting validation strategy:", error);
+    return defaultValidation();
+  }
 }
 
 /**
@@ -286,10 +355,12 @@ function getValidationForProblem(problemId) {
  */
 function defaultValidation() {
   return {
-    validate: (code) => ({
-      isValid: true,  // Default to valid if no specific validation
-      feedback: []
-    }),
+    validate: function(code) {
+      return {
+        isValid: true,  // Default to valid if no specific validation
+        feedback: []
+      };
+    },
     expectedStructure: "function divide_and_conquer(problem):\n  if base_case(problem):\n    return solve_directly(problem)\n  else:\n    divide problem into subproblems\n    recursively solve each subproblem\n    return combined results"
   };
 }
@@ -299,29 +370,36 @@ function defaultValidation() {
  */
 function validateMergeSort() {
   return {
-    validate: (code) => {
+    validate: function(code) {
       const feedback = [];
-      const isValid = 
-        // Check for merge function or merging logic
-        (code.match(/merge\s*\(|function\s+merge|procedure\s+merge|def\s+merge/i) !== null ||
-         code.match(/while.*left.*right|for.*left.*right/i) !== null) && 
-        // Check for array division
-        code.match(/mid|middle|length\s*\/\s*2|size\s*\/\s*2/i) !== null &&
-        // Check for recursive sorting of subarrays
-        code.match(/mergesort\s*\(.*left|mergesort\s*\(.*right|sort\s*\(.*left|sort\s*\(.*right/i) !== null;
       
-      if (!isValid) {
-        if (!code.match(/merge\s*\(|function\s+merge|procedure\s+merge|def\s+merge/i) !== null) {
-          feedback.push("Include a merge function or logic to combine the sorted subarrays.");
-        }
-        
-        if (!code.match(/mid|middle|length\s*\/\s*2|size\s*\/\s*2/i) !== null) {
-          feedback.push("Divide the array into two halves at the midpoint.");
-        }
-        
-        if (!code.match(/mergesort\s*\(.*left|mergesort\s*\(.*right|sort\s*\(.*left|sort\s*\(.*right/i) !== null) {
-          feedback.push("Recursively sort both halves of the array.");
-        }
+      // Check for merge function or merging logic
+      const hasMergeFunction = (code.match(/merge\s*\(|function\s+merge|procedure\s+merge|def\s+merge/i) !== null);
+      const hasMergeLogic = (code.match(/while.*left.*right|for.*left.*right/i) !== null);
+      
+      // Check for array division
+      const hasDivision = (code.match(/mid|middle|length\s*\/\s*2|size\s*\/\s*2/i) !== null);
+      
+      // Check for recursive sorting of subarrays
+      const hasRecursiveSorting = (code.match(/mergesort\s*\(.*left|mergesort\s*\(.*right|sort\s*\(.*left|sort\s*\(.*right/i) !== null);
+      
+      const isValid = (hasMergeFunction || hasMergeLogic) && hasDivision && hasRecursiveSorting;
+      
+      if (!hasMergeFunction && !hasMergeLogic) {
+        feedback.push("Include a merge function or logic to combine the sorted subarrays.");
+      }
+      
+      if (!hasDivision) {
+        feedback.push("Divide the array into two halves at the midpoint.");
+      }
+      
+      if (!hasRecursiveSorting) {
+        feedback.push("Recursively sort both halves of the array.");
+      }
+      
+      // Always provide feedback for merge sort implementation
+      if (feedback.length === 0) {
+        feedback.push("Your merge sort implementation is missing some key elements.");
       }
       
       return {

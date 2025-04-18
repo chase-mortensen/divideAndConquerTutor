@@ -82,7 +82,7 @@
           </div>
 
           <FeedbackMessage
-            v-if="!isHintMessage"
+            v-if="feedbackMessage || (detailedFeedback && detailedFeedback.length > 0)"
             :message="feedbackMessage"
             :is-correct="lastSubmissionCorrect"
             :detailed-feedback="detailedFeedback"
@@ -193,6 +193,7 @@ const requestHint = () => {
 };
 
 const handleStepSubmission = (result) => {
+  console.log('Step submission result:', result);
   isHintMessage.value = false;
   detailedFeedback.value = [];
 
@@ -201,6 +202,8 @@ const handleStepSubmission = (result) => {
   const stepType = getStepType(currentStepIndex.value);
   const questionType = currentStep.value.type;
   const questionData = currentStep.value.data;
+  
+  console.log('Step type:', stepType);
 
   if (result.correct) {
     stepsCompleted.value[currentStepIndex.value] = true;
@@ -218,10 +221,12 @@ const handleStepSubmission = (result) => {
   } else {
     // If we have specific feedback details from the component, use those
     if (result.feedbackDetails && result.feedbackDetails.length > 0) {
+      console.log('Using feedback details from component:', result.feedbackDetails);
       feedbackMessage.value = stepType === STEP_TYPE.PSEUDOCODE 
         ? "Your pseudocode implementation needs some improvements." 
         : "That's not quite right. Let's try a different approach.";
       detailedFeedback.value = result.feedbackDetails;
+      console.log('Set detailedFeedback to:', detailedFeedback.value);
     } else {
       // Otherwise get rule-based feedback using the feedback service
       const feedback = generateRuleBasedFeedback(stepType, questionType, questionData, result);
