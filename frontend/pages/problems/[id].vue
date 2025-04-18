@@ -73,7 +73,10 @@
           <div class="mb-6">
             <component
               :is="stepComponents[currentStep.type]"
-              :data="currentStep.data"
+              :data="{
+                ...currentStep.data,
+                stepType: getStepType(currentStepIndex)
+              }"
               @submit="handleStepSubmission"
             />
           </div>

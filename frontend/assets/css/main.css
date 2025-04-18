@@ -2,3 +2,25 @@
 @plugin "daisyui"{
   themes: nord --default, cmyk --prefersdark;
 }
+
+/* Custom styling for pseudocode editor */
+.pseudocode-editor {
+  font-family: 'Fira Code', Monaco, 'Courier New', monospace;
+  line-height: 1.6;
+  tab-size: 2;
+  -moz-tab-size: 2;
+  counter-reset: line;
+}
+
+.pseudocode-editor .line-numbers {
+  counter-increment: line;
+}
+
+.pseudocode-editor .line-numbers::before {
+  content: counter(line);
+  display: inline-block;
+  width: 1.5em;
+  margin-right: 0.5em;
+  text-align: right;
+  color: #666;
+}
