@@ -256,23 +256,29 @@ const learningStreak = computed(() => {
 });
 
 // Generate recommendations based on skill mastery
+// Get the lowest skill for visualization
+const lowestSkill = computed(() => {
+  const skills = userStore.progress.skillMastery;
+  return Object.entries(skills).reduce(
+    (min, [key, value]) => value < min.value ? { key, value } : min,
+    { key: 'decomposition', value: 100 }
+  ).key;
+});
+
 const recommendedAreas = computed(() => {
   const recommendations = [];
   const skills = userStore.progress.skillMastery;
 
   // Add recommendation for the lowest skill
-  const lowestSkill = Object.entries(skills).reduce(
-    (min, [key, value]) => value < min.value ? { key, value } : min,
-    { key: 'decomposition', value: 100 }
-  ).key;
+  const currLowestSkill = lowestSkill.value;
 
-  if (lowestSkill === 'decomposition') {
+  if (currLowestSkill === 'decomposition') {
     recommendations.push('Practice problem decomposition with more complex problems');
-  } else if (lowestSkill === 'base-case') {
+  } else if (currLowestSkill === 'base-case') {
     recommendations.push('Work on identifying efficient base cases for your algorithms');
-  } else if (lowestSkill === 'recurrence') {
+  } else if (currLowestSkill === 'recurrence') {
     recommendations.push('Focus on formulating recurrence relations more clearly');
-  } else if (lowestSkill === 'pseudocode') {
+  } else if (currLowestSkill === 'pseudocode') {
     recommendations.push('Improve your pseudocode writing skills with more practice');
   }
 
