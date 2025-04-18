@@ -36,6 +36,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { STEP_TYPE } from '~/constants';
+import { analyzePseudocode } from '~/stores/pseudocodeFeedback';
+import { useProblemStore } from '~/stores/problemStore';
 
 const props = defineProps({
   data: {
@@ -48,6 +50,7 @@ const emit = defineEmits(['submit']);
 const answer = ref('');
 const codeEditor = ref(null);
 const lineCount = ref(1);
+const problemStore = useProblemStore();
 
 // Check if this is a pseudocode question
 const isPseudocodeQuestion = computed(() => {
@@ -89,10 +92,28 @@ onMounted(() => {
 });
 
 const submitAnswer = () => {
-  // Check for required keywords if validationKeywords exists
+  // Default validation (for non-pseudocode questions)
   let isCorrect = true;
+  let feedbackDetails = [];
   
-  if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
+  if (isPseudocodeQuestion.value) {
+    // Use the pseudocode analyzer for detailed feedback 
+    const currentProblemId = problemStore.currentProblem?.id;
+    if (currentProblemId) {
+      const analysis = analyzePseudocode(currentProblemId, answer.value);
+      isCorrect = analysis.isCorrect;
+      feedbackDetails = analysis.detailedFeedback || [];
+    } else {
+      // Fall back to keyword validation if problem ID not available
+      if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
+        const lowerAnswer = answer.value.toLowerCase();
+        isCorrect = props.data.validationKeywords.every(keyword => 
+          lowerAnswer.includes(keyword.toLowerCase())
+        );
+      }
+    }
+  } else if (props.data.validationKeywords && Array.isArray(props.data.validationKeywords)) {
+    // Basic keyword validation for non-pseudocode questions
     const lowerAnswer = answer.value.toLowerCase();
     isCorrect = props.data.validationKeywords.every(keyword => 
       lowerAnswer.includes(keyword.toLowerCase())
@@ -101,7 +122,8 @@ const submitAnswer = () => {
 
   emit('submit', {
     answer: answer.value,
-    correct: isCorrect
+    correct: isCorrect,
+    feedbackDetails
   });
 };
 </script>

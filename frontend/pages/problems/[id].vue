@@ -215,11 +215,19 @@ const handleStepSubmission = (result) => {
     // Update user progress in store
     userStore.updateProblemProgress(problemId, stepId, true, problem.value.difficulty);
   } else {
-    // Get rule-based feedback using the feedback service
-    const feedback = generateRuleBasedFeedback(stepType, questionType, questionData, result);
+    // If we have specific feedback details from the component, use those
+    if (result.feedbackDetails && result.feedbackDetails.length > 0) {
+      feedbackMessage.value = stepType === STEP_TYPE.PSEUDOCODE 
+        ? "Your pseudocode implementation needs some improvements." 
+        : "That's not quite right. Let's try a different approach.";
+      detailedFeedback.value = result.feedbackDetails;
+    } else {
+      // Otherwise get rule-based feedback using the feedback service
+      const feedback = generateRuleBasedFeedback(stepType, questionType, questionData, result);
+      feedbackMessage.value = feedback.message;
+      detailedFeedback.value = feedback.detailedFeedback;
+    }
     
-    feedbackMessage.value = feedback.message;
-    detailedFeedback.value = feedback.detailedFeedback;
     lastSubmissionCorrect.value = false;
 
     // Update user progress in store (track the attempt)
