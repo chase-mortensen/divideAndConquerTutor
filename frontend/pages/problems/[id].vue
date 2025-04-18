@@ -58,6 +58,9 @@
           :difficulty="problem.difficulty"
           :hints="problem.hints"
           :show-hint="showHints"
+          :question-type="currentStep?.type"
+          :last-attempt-correct="lastSubmissionCorrect"
+          :attempt-count="getCurrentStepAttemptCount()"
           @hint-provided="handleAdaptiveHint"
         />
       </div>
@@ -104,6 +107,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProblemStore } from '~/stores/problemStore';
 import { useUserStore } from '~/stores/userStore';
+import { generateFeedback } from '~/stores/feedbackRules';
 import MultipleChoiceQuestion from '~/components/questions/MultipleChoiceQuestion.vue';
 import FreeTextQuestion from '~/components/questions/FreeTextQuestion.vue';
 import FillInBlankQuestion from '~/components/questions/FillInBlankQuestion.vue';
@@ -190,10 +194,16 @@ const handleStepSubmission = (result) => {
 
   const problemId = problem.value.id;
   const stepId = problem.value.steps[currentStepIndex.value].id;
+  const stepType = getStepType(currentStepIndex.value);
+  const questionType = currentStep.value.type;
+  const questionData = currentStep.value.data;
 
   if (result.correct) {
     stepsCompleted.value[currentStepIndex.value] = true;
-    feedbackMessage.value = 'Correct! You can proceed to the next step.';
+    
+    // Generate positive feedback based on step type
+    const feedback = generatePositiveFeedback(stepType);
+    feedbackMessage.value = feedback.message;
     lastSubmissionCorrect.value = true;
 
     // Reset hint index when getting correct answer
@@ -202,42 +212,157 @@ const handleStepSubmission = (result) => {
     // Update user progress in store
     userStore.updateProblemProgress(problemId, stepId, true, problem.value.difficulty);
   } else {
-    feedbackMessage.value = 'That\'s not quite right. Please try again.';
+    // Get rule-based feedback using the feedback service
+    const feedback = generateRuleBasedFeedback(stepType, questionType, questionData, result);
+    
+    feedbackMessage.value = feedback.message;
+    detailedFeedback.value = feedback.detailedFeedback;
     lastSubmissionCorrect.value = false;
-
-    // Add detailed feedback for partial results if available
-    if (result.partialResults) {
-      detailedFeedback.value = generateDetailedFeedback(result);
-    }
 
     // Update user progress in store (track the attempt)
     userStore.updateProblemProgress(problemId, stepId, false, problem.value.difficulty);
   }
 };
+  
+// Generate positive feedback for correct answers
+const generatePositiveFeedback = (stepType) => {
+  // Use the same messages as in the feedbackRules.js file
+  const messages = {
+    'decomposition': [
+      "Excellent! You've correctly identified how to break down this problem.",
+      "Great job on decomposing the problem into manageable subproblems!",
+      "Correct! You've found an effective way to decompose this problem."
+    ],
+    'baseCase': [
+      "Perfect! You've identified the correct base case for this algorithm.",
+      "That's right! This base case will properly terminate the recursive process.",
+      "Correct! This base case correctly handles the smallest instance of the problem."
+    ],
+    'recurrence': [
+      "Excellent work on formulating the recurrence relation!",
+      "Correct! This recurrence relation accurately describes how subproblems combine.",
+      "Perfect! You've identified how the solution is constructed from subproblems."
+    ],
+    'pseudocode': [
+      "Well done! Your pseudocode correctly implements the divide-and-conquer approach.",
+      "Excellent job on translating the algorithm into pseudocode!",
+      "Perfect! Your solution correctly implements all the necessary steps."
+    ]
+  };
 
-const generateDetailedFeedback = (result) => {
-  const feedback = [];
+  // Get messages for this step type or use generic messages
+  const stepMessages = messages[stepType] || [
+    "Correct! Well done.",
+    "That's right! Good job.",
+    "Perfect! You've got it."
+  ];
 
-  // Handle multiple choice question with multiple correct answers
-  if (currentStep.value.type === QUESTION_TYPE.MULTIPLE_CHOICE && Array.isArray(currentStep.value.data.correctAnswer)) {
-    feedback.push('Select all correct options to proceed.');
-  }
+  // Select a random message from the available options
+  const message = stepMessages[Math.floor(Math.random() * stepMessages.length)];
 
-  // Handle fill-in-blank questions
-  if (currentStep.value.type === QUESTION_TYPE.FILL_IN_BLANK && result.partialResults) {
-    result.partialResults.forEach((correct, index) => {
-      if (!correct) {
-        feedback.push(`Answer ${index + 1} is incorrect.`);
+  return {
+    message,
+    detailedFeedback: []
+  };
+};
+
+// Generate rule-based feedback for incorrect answers
+const generateRuleBasedFeedback = (stepType, questionType, questionData, result) => {
+  // Import functions from feedbackRules would be better, but for simplicity we'll implement inline
+  
+  // Base message templates for different step types
+  const stepTypeMessages = {
+    'decomposition': "That approach to decomposing the problem needs refinement.",
+    'baseCase': "This base case might not handle all scenarios correctly.",
+    'recurrence': "The recurrence relation doesn't correctly combine the subproblems.",
+    'pseudocode': "Your pseudocode implementation needs some adjustments."
+  };
+
+  // Default message if step type not found
+  const message = stepTypeMessages[stepType] || "That's not quite right. Let's try a different approach.";
+  
+  // Generate detailed feedback based on question type
+  let detailedFeedback = [];
+  
+  switch(questionType) {
+    case QUESTION_TYPE.MULTIPLE_CHOICE:
+      if (Array.isArray(questionData.correctAnswer)) {
+        detailedFeedback.push('Select all correct options to proceed.');
+      } else {
+        // Add step-specific guidance for multiple choice
+        const mcFeedback = {
+          'decomposition': ["Consider how the problem can be broken into smaller versions of itself."],
+          'baseCase': ["The base case should be the simplest form of the problem that can be solved directly."],
+          'recurrence': ["Think about how the solution to the original problem relates to solutions of the subproblems."],
+          'pseudocode': ["Ensure your pseudocode correctly implements the divide, conquer, and combine steps."]
+        };
+        
+        if (mcFeedback[stepType]) {
+          detailedFeedback.push(mcFeedback[stepType][0]);
+        }
       }
-    });
+      break;
+      
+    case QUESTION_TYPE.FILL_IN_BLANK:
+      if (result.partialResults) {
+        // Count how many are incorrect
+        const incorrectCount = result.partialResults.filter(r => !r).length;
+        
+        if (incorrectCount === result.partialResults.length) {
+          detailedFeedback.push("All of your answers need revision.");
+        } else if (incorrectCount > 1) {
+          detailedFeedback.push(`${incorrectCount} of your answers need revision.`);
+        } else {
+          detailedFeedback.push("One of your answers needs revision.");
+        }
+        
+        // Add specific feedback for each incorrect answer
+        result.partialResults.forEach((correct, index) => {
+          if (!correct) {
+            // If questionData has hints for specific blanks, use them
+            if (questionData.blankHints && questionData.blankHints[index]) {
+              detailedFeedback.push(`Answer ${index + 1}: ${questionData.blankHints[index]}`);
+            } else {
+              detailedFeedback.push(`Answer ${index + 1} is incorrect.`);
+            }
+          }
+        });
+      }
+      break;
+      
+    case QUESTION_TYPE.DRAG_DROP:
+      detailedFeedback.push('The order is not correct. Try a different arrangement.');
+      
+      // For algorithm steps ordering
+      if (stepType === 'pseudocode') {
+        detailedFeedback.push("Remember that divide-and-conquer follows: divide the problem, solve subproblems, combine results.");
+      }
+      break;
+      
+    case QUESTION_TYPE.FREE_TEXT:
+      // Generic feedback based on step type
+      const ftFeedback = {
+        'decomposition': ["Your approach may not effectively break down the problem."],
+        'baseCase': ["Your base case might not be simple enough."],
+        'recurrence': ["Your recurrence relation may not correctly capture the relationship between the problem and subproblems."],
+        'pseudocode': ["Your pseudocode may be missing key divide-and-conquer elements."]
+      };
+      
+      if (ftFeedback[stepType]) {
+        detailedFeedback.push(ftFeedback[stepType][0]);
+      } else {
+        detailedFeedback.push("Your answer needs revision. Try again with a different approach.");
+      }
+      break;
+      
+    default:
+      detailedFeedback.push("Please review your answer and try again.");
   }
-
-  // Handle drag-drop questions
-  if (currentStep.value.type === QUESTION_TYPE.DRAG_DROP) {
-    feedback.push('The order is not correct. Try a different arrangement.');
-  }
-
-  return feedback;
+  
+  return {
+    message,
+    detailedFeedback
+  };
 };
 
 const previousStep = () => {
@@ -297,6 +422,21 @@ const getStepType = (stepIndex) => {
   };
 
   return stepTypeMap[stepId] || STEP_TYPE.DECOMPOSITION;
+};
+
+// Get the number of attempts for the current step
+const getCurrentStepAttemptCount = () => {
+  if (!problem.value) return 0;
+  
+  const problemId = problem.value.id;
+  const stepId = problem.value.steps[currentStepIndex.value]?.id;
+  
+  // Get attempt count from user store if available
+  if (userStore.progress.problemStats[problemId]?.stepData[stepId]) {
+    return userStore.progress.problemStats[problemId].stepData[stepId].attempts || 0;
+  }
+  
+  return 0;
 };
 
 // Handle adaptive hints
