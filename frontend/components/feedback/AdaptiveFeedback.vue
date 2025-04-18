@@ -91,15 +91,39 @@ const canShowHint = computed(() => {
   // Always allow if user has explicitly toggled hints
   if (props.showHint) return true;
   
-  // If knowledge estimate is high, don't offer hints
+  // Get knowledge and other BKT metrics
   const knowledge = knowledgePrediction.value.knowledgeEstimate || 0.5;
+  const probability = knowledgePrediction.value.probabilityCorrect || 0.5;
+  const attemptsNeeded = knowledgePrediction.value.attemptsToMastery || 5;
   
-  // Show hints based on knowledge level and attempt count
-  if (knowledge < 0.4) return true; // Always show for low knowledge
-  if (knowledge < 0.7 && props.attemptCount > 1) return true; // Show after struggles
-  if (knowledge < 0.9 && props.attemptCount > 2) return true; // Show after multiple attempts
+  // Show hints in these situations
   
-  return false; // Don't show for high mastery students
+  // Case 1: Low knowledge students always get help
+  if (knowledge < 0.4) return true;
+  
+  // Case 2: Medium knowledge students get help after some struggles
+  if (knowledge < 0.7 && props.attemptCount > 0) {
+    // More likely to show hints if predicted success is low
+    if (probability < 0.6) return true;
+    if (props.attemptCount > 1) return true; // Always after multiple attempts
+  }
+  
+  // Case 3: Higher knowledge students only get help after several attempts
+  if (knowledge < 0.9) {
+    // If they're close to mastery, be more conservative with hints
+    const mastering = attemptsNeeded <= 2;
+    
+    if (mastering) {
+      // Only show hints after many attempts if they're close to mastery
+      return props.attemptCount >= 3;
+    } else {
+      // Otherwise show after fewer attempts
+      return props.attemptCount >= 2;
+    }
+  }
+  
+  // Case 4: Very high mastery students rarely get hints unless explicitly requested
+  return props.attemptCount > 3; // Only after many attempts
 });
 
 // Are there more hints available
@@ -140,24 +164,57 @@ const provideHint = () => {
   // Reset action suggestion visibility
   showActionSuggestion.value = false;
   
-  // Set starting hint level based on knowledge estimate and attempts
-  // Lower knowledge or more attempts = more explicit hint
+  // Get detailed BKT metrics for personalized hint selection
   const knowledge = knowledgePrediction.value.knowledgeEstimate || 0.5;
+  const successProb = knowledgePrediction.value.probabilityCorrect || 0.6;
+  const attemptsToMastery = knowledgePrediction.value.attemptsToMastery || 5;
   const attempts = props.attemptCount;
+  const confidence = knowledgePrediction.value.confidence || 'medium';
   
-  if (knowledge < 0.3 || attempts > 3) {
-    // For very low knowledge or many attempts, start with more explicit hint
-    currentHintLevel.value = Math.min(2, props.hints.length - 1);
-  } else if (knowledge < 0.5 || attempts > 1) {
-    // For moderate knowledge or some attempts, start with intermediate hint
-    currentHintLevel.value = Math.min(1, props.hints.length - 1);
-  } else {
-    // Otherwise start with first hint
-    currentHintLevel.value = 0;
+  // Create a hint selection strategy based on these factors
+  let hintLevel = 0;
+  
+  // Calculate a "struggle score" that combines multiple factors
+  // Higher struggle = more explicit hints
+  let struggleScore = 0;
+  
+  // Factor 1: Low knowledge increases struggle score
+  struggleScore += (1 - knowledge) * 2.5; // 0-2.5 points for knowledge
+  
+  // Factor 2: Multiple attempts increases struggle score
+  struggleScore += Math.min(2, attempts * 0.5); // 0-2 points for attempts
+  
+  // Factor 3: Low success probability increases struggle score
+  struggleScore += (1 - successProb) * 1.5; // 0-1.5 points for success probability
+  
+  // Factor 4: Many attempts to mastery increases struggle score
+  struggleScore += Math.min(1, attemptsToMastery / 10); // 0-1 points for mastery distance
+  
+  // Factor 5: If last attempt was incorrect, add to struggle score
+  if (!props.lastAttemptCorrect) {
+    struggleScore += 1;
   }
   
-  // Show action suggestion for struggling students
-  if (attempts > 2 || knowledge < 0.4) {
+  // Calculate hint level based on struggle score (0-7 scale)
+  if (struggleScore >= 5) {
+    // High struggle - give most detailed hint available
+    hintLevel = props.hints.length - 1;
+  } else if (struggleScore >= 3) {
+    // Medium struggle - give intermediate hint
+    hintLevel = Math.floor((props.hints.length - 1) * 0.66);
+  } else if (struggleScore >= 1.5) {
+    // Lower struggle - give basic hint
+    hintLevel = Math.floor((props.hints.length - 1) * 0.33);
+  } else {
+    // Minimal struggle - give minimal hint
+    hintLevel = 0;
+  }
+  
+  // Ensure valid hint level
+  currentHintLevel.value = Math.min(hintLevel, props.hints.length - 1);
+  
+  // Show action suggestion for struggling students or when confidence is low
+  if (struggleScore > 3 || confidence === 'low' || attempts > 2) {
     showActionSuggestion.value = true;
   }
   

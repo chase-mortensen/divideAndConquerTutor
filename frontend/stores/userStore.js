@@ -75,16 +75,103 @@ export const useUserStore = defineStore('user', {
       return Math.round(accuracyValues.reduce((a, b) => a + b, 0) / accuracyValues.length);
     },
     recommendedProblems: (state) => {
-      // Simple recommendation logic based on completed problems and skill mastery
-      // In a real app, this would be more sophisticated
+      // Enhanced recommendation logic using BKT model
       const completed = new Set(state.progress.completedProblems);
       const inProgress = new Set(state.progress.inProgressProblems);
       
-      // Recommend problems that are not completed and not in progress
+      // Get all incomplete problems
       const allProblems = ['binary-search', 'merge-sort', 'quick-sort', 'maximum-subarray', 'closest-pair', 'matrix-multiplication'];
-      return allProblems
-        .filter(p => !completed.has(p) && !inProgress.has(p))
-        .slice(0, 2); // Return top 2 recommendations
+      const incompleteProblems = allProblems.filter(p => !completed.has(p));
+      
+      // If there are in-progress problems, prioritize those first
+      if (inProgress.size > 0) {
+        return Array.from(inProgress).slice(0, 2);
+      }
+      
+      // Get user's knowledge estimates for all skills
+      const skillEstimates = state.progress.knowledgeEstimates;
+      
+      // Calculate average knowledge level (0-1)
+      const skills = Object.keys(skillEstimates);
+      const avgKnowledge = skills.length > 0
+        ? skills.reduce((sum, skill) => sum + (skillEstimates[skill] || 0), 0) / skills.length
+        : 0.3; // Default if no skills data yet
+      
+      // Determine appropriate difficulty level based on knowledge
+      const recommendedDifficulty = getRecommendedDifficulty(avgKnowledge);
+      
+      // Map of problem IDs to their difficulties
+      const problemDifficulties = {
+        'binary-search': 'beginner',
+        'merge-sort': 'beginner',
+        'quick-sort': 'intermediate',
+        'maximum-subarray': 'intermediate',
+        'closest-pair': 'advanced',
+        'matrix-multiplication': 'advanced'
+      };
+      
+      // Filter and rank problems
+      const rankedProblems = incompleteProblems
+        .filter(p => !inProgress.has(p))
+        .map(problemId => {
+          // Calculate a score based on match to recommended difficulty
+          const difficulty = problemDifficulties[problemId] || 'intermediate';
+          const difficultyScore = getDifficultyMatchScore(difficulty, recommendedDifficulty);
+          
+          // Calculate a recency score (prefer problems not attempted recently)
+          const recencyScore = getRecencyScore(state.progress.problemStats[problemId]);
+          
+          // Calculate overall score
+          const totalScore = (difficultyScore * 0.7) + (recencyScore * 0.3);
+          
+          return {
+            problemId,
+            difficulty,
+            score: totalScore
+          };
+        })
+        .sort((a, b) => b.score - a.score) // Sort by score (descending)
+        .map(item => item.problemId); // Return just the IDs
+      
+      return rankedProblems.slice(0, 2); // Return top 2 recommendations
+      
+      // Helper function to get recommended difficulty level
+      function getRecommendedDifficulty(knowledgeLevel) {
+        if (knowledgeLevel < 0.4) return 'beginner';
+        if (knowledgeLevel < 0.75) return 'intermediate';
+        return 'advanced';
+      }
+      
+      // Helper function to score difficulty match
+      function getDifficultyMatchScore(problemDifficulty, recommendedDifficulty) {
+        // Exact match gets highest score
+        if (problemDifficulty === recommendedDifficulty) return 1.0;
+        
+        // Adjacent difficulty levels get medium score
+        if (
+          (problemDifficulty === 'beginner' && recommendedDifficulty === 'intermediate') ||
+          (problemDifficulty === 'intermediate' && recommendedDifficulty === 'beginner') ||
+          (problemDifficulty === 'intermediate' && recommendedDifficulty === 'advanced') ||
+          (problemDifficulty === 'advanced' && recommendedDifficulty === 'intermediate')
+        ) {
+          return 0.7;
+        }
+        
+        // Distant difficulty levels get lowest score
+        return 0.3;
+      }
+      
+      // Helper function to calculate recency score (higher score = less recently attempted)
+      function getRecencyScore(problemStats) {
+        if (!problemStats || !problemStats.lastAttempt) return 1.0;
+        
+        const lastAttemptDate = new Date(problemStats.lastAttempt);
+        const now = new Date();
+        const daysSinceLastAttempt = (now - lastAttemptDate) / (1000 * 60 * 60 * 24);
+        
+        // Scale from 0 to 1, where 1 means "never attempted or very old attempt"
+        return Math.min(1.0, daysSinceLastAttempt / 14); // Max score after 2 weeks
+      }
     },
     
     // Get the next step prediction for a specific problem and skill
@@ -93,7 +180,8 @@ export const useUserStore = defineStore('user', {
       if (!state.progress.problemStats[problemId]) {
         return {
           probabilityCorrect: 0.5, // 50% chance by default
-          confidence: 'medium'
+          confidence: 'medium',
+          knowledgeEstimate: 0.3 // Default prior
         };
       }
       
@@ -107,13 +195,36 @@ export const useUserStore = defineStore('user', {
       // Get the current knowledge estimate for this skill
       const knowledgeEstimate = state.progress.knowledgeEstimates[stepId] || bktModel.p_L0;
       
-      // Predict performance using the model
-      const probabilityCorrect = bktModel.predictPerformance(knowledgeEstimate);
+      // Check if we need to apply knowledge decay
+      let adjustedKnowledge = knowledgeEstimate;
+      
+      // Apply knowledge decay if it's been more than a day since the last attempt
+      const stepData = problemStats.stepData[stepId];
+      if (stepData && stepData.attemptHistory && stepData.attemptHistory.length > 0) {
+        // Get the timestamp of the most recent attempt
+        const timestamps = stepData.attemptHistory.map(a => a.timestamp);
+        const mostRecentTimestamp = Math.max(...timestamps);
+        
+        // Calculate days since last attempt
+        const now = Date.now();
+        const daysSinceLastAttempt = (now - mostRecentTimestamp) / (1000 * 60 * 60 * 24);
+        
+        // Apply decay if it's been more than a day
+        if (daysSinceLastAttempt > 1) {
+          adjustedKnowledge = bktModel.applyKnowledgeDecay(
+            knowledgeEstimate, 
+            daysSinceLastAttempt
+          );
+        }
+      }
+      
+      // Predict performance using the model with potentially time-decayed knowledge
+      const probabilityCorrect = bktModel.predictPerformance(adjustedKnowledge);
       
       // Determine confidence level based on amount of data
       let confidence = 'low';
-      if (problemStats.stepData[stepId]) {
-        const attempts = problemStats.stepData[stepId].attempts || 0;
+      if (stepData) {
+        const attempts = stepData.attempts || 0;
         if (attempts > 5) {
           confidence = 'high';
         } else if (attempts > 2) {
@@ -121,10 +232,26 @@ export const useUserStore = defineStore('user', {
         }
       }
       
+      // Calculate attempts needed to reach mastery
+      const attemptsToMastery = bktModel.attemptsToMastery(adjustedKnowledge);
+      
+      // Get recommended next difficulty level
+      const recommendedDifficulty = bktModel.recommendDifficulty(adjustedKnowledge);
+      
       return {
         probabilityCorrect: Math.round(probabilityCorrect * 100) / 100,
-        knowledgeEstimate: Math.round(knowledgeEstimate * 100) / 100,
-        confidence
+        knowledgeEstimate: Math.round(adjustedKnowledge * 100) / 100,
+        originalKnowledge: Math.round(knowledgeEstimate * 100) / 100,
+        confidence,
+        attemptsToMastery,
+        recommendedDifficulty,
+        // Include model parameters for debugging/transparency
+        modelParams: {
+          p_L0: Math.round(bktModel.p_L0 * 100) / 100,
+          p_T: Math.round(bktModel.p_T * 100) / 100,
+          p_G: Math.round(bktModel.p_G * 100) / 100,
+          p_S: Math.round(bktModel.p_S * 100) / 100
+        }
       };
     }
   },
@@ -172,7 +299,8 @@ export const useUserStore = defineStore('user', {
           correct: false,
           attempts: 0,
           correctCount: 0,
-          incorrectCount: 0
+          incorrectCount: 0,
+          attemptHistory: []
         };
       }
       
@@ -188,8 +316,22 @@ export const useUserStore = defineStore('user', {
         stepData.incorrectCount = (stepData.incorrectCount || 0) + 1;
       }
       
+      // Record time-ordered attempt for sequence-based BKT
+      if (!stepData.attemptHistory) {
+        stepData.attemptHistory = [];
+      }
+      
+      // Add this attempt to history with timestamp
+      stepData.attemptHistory.push({
+        correct: result,
+        timestamp: Date.now(),
+        difficulty: problemDifficulty.toLowerCase()
+      });
+      
       // Update problem stats
       this.progress.problemStats[problemId].lastAttempt = new Date().toISOString();
+      this.progress.problemStats[problemId].attempts = 
+        (this.progress.problemStats[problemId].attempts || 0) + 1;
       
       // Calculate new accuracy
       const steps = Object.values(this.progress.problemStats[problemId].stepData);
@@ -234,6 +376,9 @@ export const useUserStore = defineStore('user', {
           'Advanced': 0
         };
         
+        // Track problem-specific sequences for sequential BKT updates
+        const problemSequences = {};
+        
         // Aggregate data from all problems
         for (const [problemId, problemStats] of Object.entries(this.progress.problemStats)) {
           // Count difficulties for weighting
@@ -244,8 +389,15 @@ export const useUserStore = defineStore('user', {
           // Collect performance data for this skill
           if (problemStats.stepData[skill]) {
             const stepData = problemStats.stepData[skill];
+            
+            // Add to aggregate counts
             performanceHistory.correct += stepData.correctCount || 0;
             performanceHistory.incorrect += stepData.incorrectCount || 0;
+            
+            // Store the sequence of attempts for this problem
+            if (stepData.attemptHistory) {
+              problemSequences[problemId] = stepData.attemptHistory;
+            }
           }
         }
         
@@ -263,8 +415,58 @@ export const useUserStore = defineStore('user', {
         const bktParams = BKTModel.getParametersForSkill(skill, predominantDifficulty.toLowerCase());
         const bktModel = new BKTModel(bktParams);
         
-        // Calculate knowledge estimate using BKT model
-        const knowledgeEstimate = bktModel.calculateMastery(performanceHistory) / 100;
+        // Calculate knowledge estimate using both methods
+        
+        // Method 1: Simple aggregation (current method)
+        let knowledgeEstimate = bktModel.calculateMastery(performanceHistory) / 100;
+        
+        // Method 2: Sequential update using temporal data (if available)
+        if (Object.keys(problemSequences).length > 0) {
+          // Start with prior probability
+          let p_Ln = bktModel.p_L0;
+          
+          // Create a flat list of all attempts across problems, sorted by timestamp
+          const allAttempts = [];
+          
+          for (const [problemId, attemptHistory] of Object.entries(problemSequences)) {
+            const problemDifficulty = this.progress.problemStats[problemId]?.difficulty?.toLowerCase() || 'intermediate';
+            
+            // Get problem-specific BKT params
+            const problemBktParams = BKTModel.getParametersForSkill(skill, problemDifficulty);
+            
+            // Add each attempt with its timestamp and problem-specific data
+            attemptHistory.forEach(attempt => {
+              allAttempts.push({
+                correct: attempt.correct,
+                timestamp: attempt.timestamp,
+                difficulty: problemDifficulty,
+                params: problemBktParams
+              });
+            });
+          }
+          
+          // Sort by timestamp (oldest first)
+          allAttempts.sort((a, b) => a.timestamp - b.timestamp);
+          
+          // Update knowledge sequentially
+          for (const attempt of allAttempts) {
+            // Create a BKT model with the specific parameters for this attempt
+            const attemptModel = new BKTModel(attempt.params);
+            
+            // Update knowledge state
+            p_Ln = attemptModel.updateKnowledge(p_Ln, attempt.correct);
+          }
+          
+          // Use the sequential model if we have enough data points
+          if (allAttempts.length >= 3) {
+            knowledgeEstimate = p_Ln;
+          } else {
+            // Otherwise, blend the two estimates
+            // More weight to the sequential model as we get more data points
+            const weight = allAttempts.length / 3;
+            knowledgeEstimate = knowledgeEstimate * (1 - weight) + p_Ln * weight;
+          }
+        }
         
         // Save the raw knowledge estimate
         this.progress.knowledgeEstimates[skill] = knowledgeEstimate;
