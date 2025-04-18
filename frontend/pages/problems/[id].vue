@@ -17,9 +17,9 @@
             <div class="text-sm">Est. Time: {{ problem.estimatedTime }}</div>
           </div>
         </div>
-        <button @click="toggleHints" class="btn btn-outline btn-sm">
+        <!-- <button @click="toggleHints" class="btn btn-outline btn-sm">
           {{ showHints ? 'Hide Hints' : 'Show Hints' }}
-        </button>
+        </button> -->
       </div>
 
       <div class="card bg-base-100 shadow-xl mb-8">
@@ -37,7 +37,7 @@
         </div>
       </div>
 
-      <div class="card bg-base-100 shadow-xl mb-8" v-if="showHints">
+      <!-- <div class="card bg-base-100 shadow-xl mb-8" v-if="showHints">
         <div class="card-body">
           <h2 class="card-title">Hints</h2>
           <div v-for="(hint, index) in problem.hints" :key="index" class="mt-3">
@@ -45,7 +45,9 @@
             <p>{{ hint }}</p>
           </div>
         </div>
-      </div>
+      </div> -->
+
+      <StepsProgress :steps="steps" :current-step="currentStepIndex" />
 
       <!-- Adaptive Feedback based on BKT model -->
       <div v-if="!showHints">
@@ -59,8 +61,6 @@
           @hint-provided="handleAdaptiveHint"
         />
       </div>
-
-      <StepsProgress :steps="steps" :current-step="currentStepIndex" />
 
       <div class="card bg-base-100 shadow-xl mb-8" v-if="currentStep">
         <div class="card-body">
@@ -76,12 +76,10 @@
           </div>
 
           <FeedbackMessage
+            v-if="!isHintMessage"
             :message="feedbackMessage"
             :is-correct="lastSubmissionCorrect"
-            :is-hint="isHintMessage"
             :detailed-feedback="detailedFeedback"
-            :show-hint-button="!showHints"
-            @request-hint="requestHint"
           />
 
           <StepNavigation

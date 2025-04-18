@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout name="default">
     <div class="hero min-h-[60vh] bg-base-200 rounded-lg">
-      <div class="hero-content text-center">
+      <div class="hero-content text-center text-primary">
         <div class="max-w-md">
           <h1 class="text-5xl font-bold">Divide-and-Conquer Tutor</h1>
           <p class="py-6">
@@ -57,7 +57,7 @@
             </div>
             <p>{{ problem.description }}</p>
             <div class="card-actions justify-end mt-4">
-              <NuxtLink :to="`/problems/${problem.id}`" class="btn btn-primary btn-sm">Solve Now</NuxtLink>
+              <NuxtLink :to="`/problems/${problem.id}`" class="btn btn-base-300 btn-sm">Solve Now</NuxtLink>
             </div>
           </div>
         </div>
@@ -73,3 +73,9 @@ import { DIFFICULTY } from '~/constants';
 const problemStore = useProblemStore();
 const featuredProblems = problemStore.featuredProblems;
 </script>
+
+<style scoped>
+.hero {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('~/assets/images/hero-bg.jpg');
+}
+</style>

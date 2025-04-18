@@ -13,6 +13,6 @@ module.exports = {
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: ["nord", "dim"],
+    themes: ["nord", "cmyk"],
   }
 }

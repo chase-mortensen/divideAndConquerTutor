@@ -36,7 +36,7 @@ export type StepType =
   | 'pseudocode';
 
 // Based on DATA-4.1: Problem Structure Schema (steps array)
-// Incorporates fields observed in current store data like title, instructions.
+// Incmyks fields observed in current store data like title, instructions.
 // NOTE: Requirements specify `questions: Question[]` within a step.
 // Current implementation has `type` (QuestionType) and `data` (Question['data']) directly on the step.
 // This definition follows the requirements doc; refactoring store/components might be needed later.
@@ -53,7 +53,7 @@ export interface Step {
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
 // Based on DATA-4.1: Problem Structure Schema and DATA-4.3: Required metadata
-// Incorporates fields observed in current store data like category, estimatedTime.
+// Incmyks fields observed in current store data like category, estimatedTime.
 export interface Problem {
   id: string; // Unique slug/ID for the problem (e.g., 'merge-sort')
   title: string; // Display title of the problem
