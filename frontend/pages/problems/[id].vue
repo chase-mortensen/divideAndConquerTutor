@@ -50,14 +50,14 @@
       <StepsProgress :steps="steps" :current-step="currentStepIndex" />
 
       <!-- Adaptive Feedback based on BKT model -->
-      <div v-if="!showHints">
+      <div v-if="!showHints && (!lastSubmissionCorrect || isHintMessage)">
         <AdaptiveFeedback
           :problem-id="problem.id"
           :step-id="currentStep?.id"
           :step-type="getStepType(currentStepIndex)"
           :difficulty="problem.difficulty"
           :hints="getStepHints(currentStepIndex)"
-          :show-hint="showHints"
+          :show-hint="!lastSubmissionCorrect || isHintMessage"
           :question-type="currentStep?.type"
           :last-attempt-correct="lastSubmissionCorrect"
           :attempt-count="getCurrentStepAttemptCount()"
@@ -86,6 +86,7 @@
             :message="feedbackMessage"
             :is-correct="lastSubmissionCorrect"
             :detailed-feedback="detailedFeedback"
+            :show-hint-button="false"
           />
 
           <StepNavigation

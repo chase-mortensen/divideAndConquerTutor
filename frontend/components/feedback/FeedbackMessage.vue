@@ -1,28 +1,22 @@
 <template>
-  <div v-if="message" class="alert mb-4" :class="{
+  <div v-if="message" class="alert mb-4 flex flex-col items-start" :class="{
     'alert-success': isCorrect,
     'alert-error': !isCorrect && !isHint,
     'alert-warning': isHint
   }">
-    <div>
-      <span v-if="isCorrect">✓</span>
-      <span v-else-if="isHint">💡</span>
-      <span v-else>✗</span>
-      {{ message }}
+    <div class="flex items-start">
+      <span v-if="isCorrect" class="mr-2">✓</span>
+      <span v-else-if="isHint" class="mr-2">💡</span>
+      <span v-else class="mr-2">✗</span>
+      <span>{{ message }}</span>
     </div>
     
-    <div v-if="detailedFeedback && detailedFeedback.length > 0" class="mt-2">
+    <div v-if="detailedFeedback && detailedFeedback.length > 0" class="mt-3 w-full">
       <ul class="list-disc list-inside">
         <li v-for="(item, index) in detailedFeedback" :key="index" class="mt-1">
           {{ item }}
         </li>
       </ul>
-    </div>
-    
-    <div v-if="showHintButton && !isCorrect" class="mt-2">
-      <button @click="$emit('requestHint')" class="btn btn-xs btn-outline">
-        Need a hint?
-      </button>
     </div>
   </div>
 </template>
