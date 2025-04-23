@@ -23,10 +23,10 @@ An educational web application designed to help computer science students learn 
 
 ### Installation
 
-1. Clone the repository
+1. Clone the repository and navigate to the frontend folder
 ```bash
-git clone https://github.com/yourusername/divide-and-conquer-tutor.git
-cd divide-and-conquer-tutor
+git clone https://github.com/chase-mortensen/divide-and-conquer-tutor.git
+cd divide-and-conquer-tutor/frontend/
 ```
 
 2. Install dependencies
