@@ -51,8 +51,8 @@ divide-and-conquer-tutor/
 ├── pages/            # Application pages
 ├── stores/           # Pinia stores for state management
 ├── public/           # Public static assets
-├── nuxt.config.ts    # Nuxt configuration
-└── README.md         # This file
+└── nuxt.config.ts    # Nuxt configuration
+README.md             # This file
 ```
 
 ## Technologies Used
