@@ -16,6 +16,7 @@ export const STEP_TYPE = {
   RECURRENCE: 'recurrence',
   PSEUDOCODE: 'pseudocode',
   ALGORITHM_STEPS: 'algorithm-steps', // Used in problemStore, maps to PSEUDOCODE in getStepType
+  ALGORITHM_INSIGHT: 'algorithm-insight', // Optional, used sparingly for miscellaneous insights
 } as const;
 
 export type PedagogicalStepType = typeof STEP_TYPE[keyof typeof STEP_TYPE];
